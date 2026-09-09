@@ -60,7 +60,6 @@ class ExperimentSettings:
 class DatasetSettings:
     path: Path
     data_type: str = "jsonl"
-    split: str = "test"
 
 @dataclass(frozen=True)
 class SkillSettings:
@@ -203,15 +202,7 @@ def create_config(
     dataset_path: Optional[str] = None,
     skill_path: Optional[str] = None,
 ) -> ExperimentConfig:
-    """
-    建立完整 ExperimentConfig。
 
-    注意：
-    use_skill / use_rag / dataset_path / skill_path
-    目前可以由 main.py / CLI 傳入。
-
-    API Key 等機密資訊則從 .env 讀取。
-    """
     # Dataset
 
     if dataset_path is None:
@@ -223,7 +214,6 @@ def create_config(
     dataset_settings = DatasetSettings(
         path=Path(dataset_path),
         data_type=_get_env("ORQA_DATA_TYPE", "jsonl"),
-        split=_get_env("ORQA_DATA_SPLIT", "test"),
     )
 
     # Skill
@@ -527,7 +517,6 @@ def print_config(config: ExperimentConfig) -> None:
     print("\n[Dataset]")
     print(f"Path                  : {config.dataset.path}")
     print(f"Type                  : {config.dataset.data_type}")
-    print(f"Split                 : {config.dataset.split}")
 
     print("\n[Skill]")
     print(f"Enabled               : {config.skill.enabled}")
