@@ -1,6 +1,8 @@
 from config import print_config
 from cli import get_config_from_cli
 from dataset import load_dataset
+from skill import load_skill
+from prompt import build_prompt, render_prompt
 
 
 def main():
@@ -13,13 +15,42 @@ def main():
     print(f"datset path: {config.dataset.path}")
     print(f"Total questions: {len(dataset)}")
 
+    skill = None
+
+    if config.experiment.use_skill:
+        print("[Loading Skill]")
+
+        skill = load_skill(
+            skill_path=config.skill.path,
+            source_type=config.skill.source_type,
+        )
+
+        print(f"Skill name   : {skill.name}")
+        print(f"Skill source : {skill.source_path}")
+        print(f"Source type  : {skill.source_type}")
+
+        print("\nSkill files:")
+        for file_name in skill.files:
+            print(f"  - {file_name}")
+        print("\n" + "-" * 30)
+        print("Skill Instruction")
+        print("-" * 30)
+        print(skill.instruction)
+
+    else:
+        print("\nSkill is disabled.")
+
     question = dataset[0]
-    print(f"index: {question.index}")
-    print(f"question_type: {question.question_type}")
-    print(f"context: {question.context}")
-    print(f"question: {question.question}")
-    print(f"options: {question.options}")
-    print(f"target answer:{question.target_answer}")
+    prompt = build_prompt(
+        question=question,
+        skill=skill,
+        retrieved_chunks=None,
+    )
+    print("[Prompt mode]")
+    print(prompt.mode)
+    print("[Rendered Prompt]")
+    print(render_prompt(prompt))
+
 
 if __name__ == "__main__":
     main()
