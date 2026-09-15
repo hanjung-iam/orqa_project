@@ -14,14 +14,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from datetime import datetime
 
 
 class Storage:
 
     def __init__(self, result_dir: str | Path):
-
-        # 將傳入的路徑轉成 Path，
-        # 方便後續進行跨平台的檔案操作。
         self.result_dir = Path(result_dir)
 
         # 如果 results/ 不存在，就自動建立
@@ -29,6 +27,8 @@ class Storage:
             parents=True,
             exist_ok=True,
         )
+
+        self.experiment_path = self.result_dir / "experiment.json"
 
         # 每一題的完整 prediction record
         self.predictions_file = (
@@ -50,6 +50,77 @@ class Storage:
             self.result_dir / "wrong_predictions.json"
         )
 
+    @staticmethod
+    def get_method(use_skill, use_rag):
+        if use_skill and use_rag:
+            return "skill_rag"
+        elif use_skill:
+            return "skill"
+        elif use_rag:
+            return "rag"
+        else:
+            return "basic"
+
+    def create_experiment_record(self, config, dataset_size, skill=None):
+        now = datetime.now()
+        experiment_id = now.strftime("%Y%m%d_%H%M%S")
+        started_at = now.isoformat(timespec="seconds")
+
+        use_skill = config.experiment.use_skill
+        use_rag = config.experiment.use_rag
+        method = self.get_method(use_skill, use_rag)
+
+        if skill is not None:
+            skill_metadata = {
+                "enabled": True,
+                "name": skill.name,
+                "source_type": skill.source_type,
+                "source_path": str(skill.source_path),
+            }
+
+        else:
+            skill_metadata = {
+                "enabled": False,
+                "name": None,
+                "source_type": None,
+                "source_path": None,
+            }
+
+        repair_model = "claude-haiku-4-5-20251001"
+
+        metadata = {
+            "experiment_id": experiment_id,
+            "started_at": started_at,
+
+            "method": method,
+
+            "model": config.llm.model,
+            "repair_model": repair_model,
+            "skill": skill_metadata,
+            "rag": {
+                "enabled": use_rag,
+            },
+            "dataset": {
+                "path": str(config.dataset.path),
+                "total_questions": dataset_size,
+            },
+
+            "parameters": {
+                "max_tokens": config.llm.max_tokens,
+            },
+        }
+
+        with open(self.experiment_path,"w",encoding="utf-8") as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        return metadata
+    
+    def load_experiment_metadata(self):
+
+        if not self.experiment_path.exists():
+            return None
+        with open(self.experiment_path,"r",encoding="utf-8",) as f:
+            return json.load(f)
+        
     @staticmethod
     def _append_jsonl(
         path: Path,

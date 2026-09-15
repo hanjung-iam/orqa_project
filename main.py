@@ -46,6 +46,12 @@ def main():
     storage = create_storage(config.output.base_dir)
     print(f"Storage dir: {storage.result_dir}")
 
+    experiment_metadata = storage.create_experiment_record(
+        config=config,
+        dataset_size=len(dataset),
+        skill=skill,
+    )
+
     print("[Creating inference engine]")
     engine = InferenceEngine(
         llm_client=llm_client,
