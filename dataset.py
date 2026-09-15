@@ -78,5 +78,6 @@ def load_dataset(path: str | Path) -> ORQADataset:
             )
 
             questions.append(question)
+            question_index+=1
 
     return ORQADataset(questions)

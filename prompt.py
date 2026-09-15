@@ -50,6 +50,7 @@ RAG_CHUNK_SEPARATOR = (
 @dataclass(frozen=True)
 class Prompt:
     instruction: str # system prompt/ instruction
+    #chunk_content: str # retrieved chunks
     question: str # user prompt/ question
     output_prefix: str
     mode: str # basic / skill / rag / skill_rag

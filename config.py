@@ -70,16 +70,6 @@ class SkillSettings:
 
 @dataclass(frozen=True)
 class RAGSettings:
-    """
-    RAG 相關設定。
-
-    注意：
-    目前改成使用 RAGFlow，因此這裡不再放
-    Voyage / Chroma / BM25 / RRF 的舊設定。
-
-    之後 RAGFlow adapter 再負責實際 retrieval。
-    """
-
     enabled: bool = False
     provider: str = "ragflow"
 
