@@ -7,6 +7,7 @@ from inference import InferenceEngine
 from parser import index_to_answer
 from storage import create_storage
 from evaluation import Evaluator
+from tqdm import tqdm
 
 
 def main():
@@ -38,15 +39,13 @@ def main():
             print(f"  - {file_name}")
 
 
-    test_dataset = dataset[:20]
-
     print("[Creating client]")
     llm_client = create_llm_client(config)
 
     storage = create_storage(config.output.base_dir)
     print(f"Storage dir: {storage.result_dir}")
 
-    experiment_metadata = storage.create_experiment_record(
+    storage.create_experiment_record(
         config=config,
         dataset_size=len(dataset),
         skill=skill,
@@ -58,31 +57,54 @@ def main():
         skill=skill,
     )
     print("[Running inference]")
-    inference_results = []
-    for question in test_dataset:
-        print(f"\n[Processing Question {question.index}]")
-        #print(">>> Before")
+    completed_indices = (storage.get_completed_indices())
+    print(f"[Resume from question {len(completed_indices)}]")
+
+    for question in tqdm(dataset,total=len(dataset),desc="Inference",unit="question"):
+
+        if question.index in completed_indices:
+            #skipped_count += 1
+            print(
+                f"[Skip Question {question.index}] "
+                f"Already completed."
+            )
+            continue
+        
+
         response = engine.run(question)
-        #print(">>> After")
-        inference_results.append(response)
+        if response.repaired:
+
+            if response.repair_response is not None:
+                repair_text = response.repair_response.text
+            else:
+                repair_text = None
+            invalid_record = {
+                "index": question.index,
+                "question_type": (question.question_type),
+
+                "prediction_before_repair": (response.prediction),
+                "prediction_after_repair": (response.repaired_prediction),
+
+                "raw_response": (response.raw_response),
+                "repair_response": (repair_text),
+            }
+
+            storage.save_invalid_answer(invalid_record)
 
         storage.save_inference_result(
             question=question,
             result=response,
         )
 
-        if response.repaired:
-            invalid_record = {
-                "index": question.index,
-                "question_type": question.question_type,
-                "prediction_after_repair": (response.prediction),
-                "raw_response": (response.raw_response),
-                "repair_response": (response.repair_response),
-            }
-            storage.save_invalid_answer(invalid_record)
+        completed = question.index+1
+
+        if completed%100 == 0:
+            print(f"Processed {completed} / {len(dataset)} questions")
+
+        
 
 
-    print("[Testing storage]")
+    print("[Loading storage]")
     save_predictions = storage.load_predictions()
     print(f"Total saved predictions: {len(save_predictions)}")
     invalid_answers = storage.load_invalid_answers()

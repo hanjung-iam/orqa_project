@@ -172,6 +172,7 @@ class ClaudeClient:
             {
                 "type": "text",
                 "text": prompt.instruction,
+                "cache_control": {"type": "ephemeral"}
             }
         ]
 
