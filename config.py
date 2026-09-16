@@ -229,7 +229,7 @@ def create_config(
         api_key=_get_env("RAGFLOW_API_KEY"),
         pdf_dataset_name=_get_env("RAGFLOW_PDF_DATASET_NAME","orqa_pdf"),
         md_dataset_name=_get_env("RAGFLOW_MD_DATASET_NAME","orqa_markdown"),
-        embedding_model=_get_env("RAGFLOW_EMBEDDING","voyage-4-large"),
+        embedding_model=_get_env("RAGFLOW_EMBEDDING_MODEL","voyage-4-large"),
         chunk_method=_get_env("RAGFLOW_CHUNK_METHOD", "naive"),
         top_k=_get_int_env("RAG_TOP_K", 5),
         save_retrieved_chunks=_get_bool_env(

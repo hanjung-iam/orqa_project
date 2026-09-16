@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+from pathlib import Path
 from ragflow_sdk import RAGFlow
 
 @dataclass(frozen=True)
@@ -12,6 +13,14 @@ class RAGFlowDatasetInfo:
     chunk_method: str
     document_count: int
     chunk_count: int
+
+@dataclass(frozen=True)
+class RAGFlowDocInfo:
+    id: str # 文件的ID
+    name: str
+    dataset_id: str
+    chunk_count: Optional[int] 
+    run: Optional[str] # 文件處理狀態
 
 class RAGFlowClient:
 
@@ -100,7 +109,7 @@ class RAGFlowClient:
         chunk_method: str = "naive",
     ) -> dict[str, RAGFlowDatasetInfo]:
         
-        pdf_dataset, pdf_created = (
+        pdf_dataset, _ = (
             self.get_or_create_dataset(
                 name=pdf_dataset_name,
                 embedding_model=embedding_model,
@@ -109,7 +118,7 @@ class RAGFlowClient:
             )
         )
 
-        md_dataset, md_created = (
+        md_dataset, _ = (
             self.get_or_create_dataset(
                 name=md_dataset_name,
                 embedding_model=embedding_model,
@@ -122,6 +131,69 @@ class RAGFlowClient:
             "pdf": self._to_dataset_info(pdf_dataset),
             "markdown": self._to_dataset_info(md_dataset),
         }
+
+    def upload_file(
+        self,
+        dataset_name: str,
+        file_path: str | Path,
+    ) -> RAGFlowDocInfo:
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"File does not exist: {path}"
+            )
+        if not path.is_file():
+            raise ValueError(f"Path is not a file: {path}")
+
+        dataset = self.get_dataset_by_name(dataset_name)
+        if dataset is None:
+            raise RuntimeError(f"Dataset not found: {dataset_name}")
+
+        with path.open("rb") as file:
+            file_bytes = file.read()
+
+        uploaded_doc = (dataset.upload_documents([
+            {
+                "display_name": path.name,
+                "blob": file_bytes,
+            }
+        ]))
+        if not uploaded_doc:
+            raise RuntimeError(f"returned no uploaded doc for file: {path}")
+
+        document = uploaded_doc[0]
+        return self._to_dataset_info(document)
+
+    # upload multiple files
+    def upload_files(
+        self,
+        dataset_name: str,
+        file_paths: list[str | Path],
+    ) -> list[RAGFlowDocInfo]:
+        dataset = self.get_dataset_by_name(dataset_name)
+        if dataset is None:
+            raise RuntimeError(f"RAGFlow dataset not found: {dataset_name}")
+        doc_list = []
+        for file_path in file_paths:
+            path = Path(file_path)
+
+            if not path.exists():
+                raise FileNotFoundError(f"File does not exist: {path}")
+            if not path.is_file():
+                raise ValueError(f"Path is not a file: {path}")
+            
+            with path.open("rb") as file:
+                file_bytes = file.read()
+            doc_list.append({
+                "display_name": path.name,
+                "blob": file_bytes,
+            })
+
+        uploaded_doc = (dataset.upload_documents(doc_list))
+        return[
+            self._to_dataset_info(doc) for doc in uploaded_doc
+        ]
+        
 
     @staticmethod
     def _to_dataset_info(dataset) -> RAGFlowDatasetInfo:
