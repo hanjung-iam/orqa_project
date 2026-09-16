@@ -78,7 +78,10 @@ class RAGSettings:
     api_key: Optional[str] = None
 
     # RAGFlow Knowledge Base / Dataset
-    dataset_id: Optional[str] = None
+    pdf_dataset_name: str = "orqa_or_textbook_pdf"
+    md_dataset_name: str = "orqa_or_textbook_markdown"
+    embedding_model: str = "voyage-4-large"
+    chunk_method: str = "naive"
 
     # Retrieval
     top_k: int = 5
@@ -224,7 +227,10 @@ def create_config(
         provider=_get_env("RAG_PROVIDER", "ragflow"),
         host=_get_env("RAGFLOW_HOST"),
         api_key=_get_env("RAGFLOW_API_KEY"),
-        dataset_id=_get_env("RAGFLOW_DATASET_ID"),
+        pdf_dataset_name=_get_env("RAGFLOW_PDF_DATASET_NAME","orqa_pdf"),
+        md_dataset_name=_get_env("RAGFLOW_MD_DATASET_NAME","orqa_markdown"),
+        embedding_model=_get_env("RAGFLOW_EMBEDDING","voyage-4-large"),
+        chunk_method=_get_env("RAGFLOW_CHUNK_METHOD", "naive"),
         top_k=_get_int_env("RAG_TOP_K", 5),
         save_retrieved_chunks=_get_bool_env(
             "RAG_SAVE_RETRIEVED_CHUNKS",
@@ -423,10 +429,28 @@ def validate_config(config: ExperimentConfig) -> None:
                 "RAG is enabled but RAGFLOW_API_KEY is not set."
             )
 
-        if not config.rag.dataset_id:
+        if not config.rag.pdf_dataset_name:
             raise ValueError(
-                "RAG is enabled but "
-                "RAGFLOW_DATASET_ID is not set."
+                "RAGFLOW_PDF_DATASET_NAME "
+                "must not be empty."
+            )
+
+        if not config.rag.md_dataset_name:
+            raise ValueError(
+                "RAGFLOW_MD_DATASET_NAME "
+                "must not be empty."
+            )
+
+        if not config.rag.embedding_model:
+            raise ValueError(
+                "RAGFLOW_EMBEDDING_MODEL "
+                "must not be empty."
+            )
+
+        if not config.rag.chunk_method:
+            raise ValueError(
+                "RAGFLOW_CHUNK_METHOD "
+                "must not be empty."
             )
 
         if config.rag.top_k <= 0:
@@ -517,7 +541,10 @@ def print_config(config: ExperimentConfig) -> None:
     print(f"Enabled               : {config.rag.enabled}")
     print(f"Provider              : {config.rag.provider}")
     print(f"Host                  : {config.rag.host}")
-    print(f"Dataset ID            : {config.rag.dataset_id}")
+    print(f"PDF dataset name      : {config.rag.pdf_dataset_name}")
+    print(f"Markdown dataset name : {config.rag.md_dataset_name}")
+    print(f"Embedding model       : {config.rag.embedding_model}")
+    print(f"Chunk method          : {config.rag.chunk_method}")
     print(f"Top K                 : {config.rag.top_k}")
 
     print("\n[LLM]")
