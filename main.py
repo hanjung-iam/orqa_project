@@ -72,21 +72,23 @@ def main():
         
 
         response = engine.run(question)
+
         if response.repaired:
 
-            if response.repair_response is not None:
-                repair_text = response.repair_response.text
+            if response.repair_llm_response is not None:
+                repair_text = response.repair_llm_response.text
             else:
                 repair_text = None
+
             invalid_record = {
                 "index": question.index,
-                "question_type": (question.question_type),
+                "question_type": question.question_type,
 
-                "prediction_before_repair": (response.prediction),
-                "prediction_after_repair": (response.repaired_prediction),
+                "prediction_before_repair": None,
+                "prediction_after_repair": response.prediction,
 
-                "raw_response": (response.raw_response),
-                "repair_response": (repair_text),
+                "raw_response": response.raw_response,
+                "repair_response": repair_text,
             }
 
             storage.save_invalid_answer(invalid_record)
