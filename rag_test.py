@@ -127,15 +127,6 @@ def main() -> None:
         )
 
     if (
-        pdf_dataset.embedding_model
-        != config.rag.embedding_model
-    ):
-        errors.append(
-            "PDF Dataset embedding model does not match "
-            "configuration."
-        )
-
-    if (
         pdf_dataset.chunk_method
         != config.rag.chunk_method
     ):
@@ -154,12 +145,17 @@ def main() -> None:
             "Markdown Dataset name does not match configuration."
         )
 
+    if md_dataset.name != config.rag.md_dataset_name:
+        errors.append(
+        "Markdown Dataset name does not match configuration."
+        )
+        
     if (
-        md_dataset.embedding_model
-        != config.rag.embedding_model
+    pdf_dataset.embedding_model
+    != md_dataset.embedding_model
     ):
         errors.append(
-            "Markdown Dataset embedding model does not match configuration."
+        "PDF and Markdown datasets use different embedding models."
         )
 
     if (
