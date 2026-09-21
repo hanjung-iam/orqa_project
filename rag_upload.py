@@ -20,18 +20,12 @@ def parse_arguments():
             --markdown "data/structured.md"
     """
     parser = argparse.ArgumentParser(
-        description=(
-            "Upload ORQA textbook materials to RAGFlow."
-        )
+        description=("Upload ORQA textbook materials to RAGFlow.")
     )
 
-    parser.add_argument(
-        "--pdf", required=True, type=str, help=("Path to OR textbook.pdf"),
-    )
+    parser.add_argument("--pdf", required=True, type=str, help=("Path to OR textbook.pdf"),)
 
-    parser.add_argument(
-        "--markdown", required=True, type=str, help=("Path to structured.md"),
-    )
+    parser.add_argument("--markdown", required=True, type=str, help=("Path to structured.md"),)
 
     return parser.parse_args()
 
@@ -40,11 +34,9 @@ def main() -> None:
     args = parse_arguments()
 
     pdf_path = Path(args.pdf).resolve()
-
     markdown_path = Path(args.markdown).resolve()
 
     print("\n[Input files]")
-
     print(f"PDF       : {pdf_path}")
     print(f"Markdown  : {markdown_path}")
 
@@ -59,8 +51,7 @@ def main() -> None:
         sys.exit(1)
 
     if pdf_path.suffix.lower() != ".pdf":
-        print(f"ERROR: Expected a PDF file, but got: {pdf_path.suffix}"
-        )
+        print(f"ERROR: Expected a PDF file, but got: {pdf_path.suffix}")
         sys.exit(1)
 
     if not markdown_path.exists():
@@ -83,17 +74,7 @@ def main() -> None:
         use_rag=True,
         use_skill=False,
     )
-
-    try:
-        validate_config(config)
-
-    except Exception as exc:
-
-        print( "\nConfiguration validation failed.")
-        print(f"Error: {exc}")
-        sys.exit(1)
-
-
+    
     print("\n[3/5] Connecting to RAGFlow...")
 
     try:
@@ -107,8 +88,7 @@ def main() -> None:
 
     print("RAGFlow connection successful.")
 
-
-    print("\n[4/5] Uploading OR textbook.pdf...")
+    print("\n[4/5] Uploading pdf...")
 
     print(f"Target Dataset: {config.rag.pdf_dataset_name}")
 

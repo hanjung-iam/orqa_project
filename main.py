@@ -83,8 +83,6 @@ def main():
             invalid_record = {
                 "index": question.index,
                 "question_type": question.question_type,
-
-                "prediction_before_repair": None,
                 "prediction_after_repair": response.prediction,
 
                 "raw_response": response.raw_response,

@@ -4,15 +4,16 @@ from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
 from ragflow_sdk import RAGFlow
+import time
 
 @dataclass(frozen=True)
 class RAGFlowDatasetInfo:
     id: str # RAGFlow Dataset ID
     name: str # Dataset name
-    embedding_model: str
-    chunk_method: str
-    document_count: int
-    chunk_count: int
+    embedding_model: Optional[str]
+    chunk_method: Optional[str]
+    document_count: Optional[int]
+    chunk_count: Optional[int]
 
 @dataclass(frozen=True)
 class RAGFlowDocInfo:
@@ -25,6 +26,10 @@ class RAGFlowDocInfo:
 class RAGFlowClient:
 
     def __init__(self,host: str,api_key: str):
+        if not host:
+            raise ValueError("RAGFlow host cannot be empty.")
+        if not api_key:
+            raise ValueError("RAGFlow API key cannot be empty.")
 
         self.client = RAGFlow(api_key=api_key, base_url=host)
 
@@ -58,19 +63,13 @@ class RAGFlowClient:
         description: Optional[str] = None,
     ):
         if not name:
-            raise ValueError(
-                "Dataset name cannot be empty."
-            )
+            raise ValueError("Dataset name cannot be empty.")
 
         if not embedding_model:
-            raise ValueError(
-                "Embedding model cannot be empty."
-            )
+            raise ValueError("Embedding model cannot be empty.")
 
         if not chunk_method:
-            raise ValueError(
-                "Chunk method cannot be empty."
-            )
+            raise ValueError("Chunk method cannot be empty." )
 
         dataset = self.client.create_dataset(
             name=name,
@@ -162,7 +161,22 @@ class RAGFlowClient:
             raise RuntimeError(f"returned no uploaded doc for file: {path}")
 
         document = uploaded_doc[0]
-        return self._to_dataset_info(document)
+        return self._to_doc_info(document)
+
+    # 取得 dataset 裡的所有文件
+    def get_documents(self, dataset_name: str):
+        dataset = self.get_dataset_by_name(dataset_name)
+        if dataset is None:
+            raise RuntimeError(f"Dataset {dataset_name} does not exist.")
+        return dataset.list_documents(page=1, page_size=100)
+
+    # 根據 dataset name & document name 找文件
+    def get_document(self, dataset_name: str, document_name: str):
+        documents = self.get_documents(dataset_name)
+
+        for doc in documents:
+            if doc.name == document_name: return doc
+        return None
 
     # upload multiple files
     def upload_files(
@@ -191,9 +205,106 @@ class RAGFlowClient:
 
         uploaded_doc = (dataset.upload_documents(doc_list))
         return[
-            self._to_dataset_info(doc) for doc in uploaded_doc
+            self._to_doc_infos(doc) for doc in uploaded_doc
         ]
-        
+
+    def parse_documents(
+        self,
+        dataset_name: str,
+        document_ids: list[str],
+    ) -> list[RAGFlowDocInfo]:
+        if not document_ids:
+            raise ValueError("document_ids cannot be empty.")
+        dataset = self.get_dataset_by_name(dataset_name)
+        if dataset is None:
+            raise RuntimeError(f"dataset {dataset_name} does not exist.")
+
+        finished_doc = dataset.parse_documents(document_ids)
+        result = []
+
+        for doc in finished_doc:
+            id = doc[0]
+            run = doc[1]
+            chunk_count = doc[2]
+
+            docs = dataset.list_documents(id=id)
+            if not docs:
+                raise RuntimeError(f"document {id} cannot be found fter parsing")
+            document = docs[0]
+            result.append(self._to_doc_info(document))
+
+        return result
+
+    def async_parse_doc(
+        self,
+        dataset_name: str,
+        document_ids: list[str]
+    )-> None:
+        dataset = self.get_dataset_by_name(dataset_name)
+        dataset.async_parse_documents(document_ids)
+
+    def get_document_status(
+        self,
+        dataset_name: str,
+        document_id: str
+    ) -> RAGFlowDocInfo:
+        dataset = self.get_dataset_by_name(dataset_name)
+        if dataset is None:
+            raise RuntimeError(f"Dataset {dataset_name} does not exists.")
+        documents = dataset.list_documents(id=document_id) 
+        if not documents:
+            raise RuntimeError(f"Document {document_id} does not exist.")
+        return self._to_doc_info(documents[0])
+
+    # 等待指定文件 parsing 完成
+    def wait_for_parsing(
+        self,
+        dataset_name: str,
+        document_ids: list[str],
+        poll_interval: int = 2, # 每隔2秒向RAGFlow查詢一次
+        timeout: int = 3600 # 最常等待時間(秒)
+    ) -> list[RAGFlowDocInfo]:
+
+        if not document_ids:
+            raise ValueError("document_ids connot be empty")
+        start_time = time.time()
+        pending = set(document_ids)
+
+        latest_status = {}
+
+        print("[Waiting for RAGFlow Document parsing]")
+        while pending:
+            elapsed = time.time() - start_time
+            if elapsed > timeout:
+                raise TimeoutError("RAGFlow document parsing timed out")
+
+            for id in list(pending):
+                status = self.get_document_status(
+                    dataset_name=dataset_name,
+                    document_id=id
+                )
+
+                latest_status[id] = status
+
+                print(f"[RAGFlow] {status.name} | {status.run}")
+
+                run = status.run.upper() if isinstance(status.run, str) else ""
+                if run == "DONE":
+                    pending.discard(id)
+                elif run == "FAIL":
+                    raise RuntimeError(f"RAGFlow parsing failed for doc {status.name}")
+                elif run == "CANCEL":
+                    raise RuntimeError(f"RAGFlow parsing was cancilled for doc {status.name}")
+
+            if pending:
+                time.sleep(poll_interval)
+
+        print("All RAGFlow docs finished parsing")
+        return [
+            latest_status[document_id]
+            for document_id in document_ids
+        ]
+            
 
     @staticmethod
     def _to_dataset_info(dataset) -> RAGFlowDatasetInfo:
@@ -205,6 +316,16 @@ class RAGFlowClient:
             chunk_method=getattr(dataset,"chunk_method",None),
             document_count=getattr(dataset,"document_count",None),
             chunk_count=getattr(dataset,"chunk_count",None),
+        )
+
+    @staticmethod
+    def _to_doc_info(document) -> RAGFlowDocInfo:
+        return RAGFlowDocInfo(
+            id=getattr(document, "id", ""),
+            name=getattr(document, "name", ""),
+            dataset_id=getattr(document, "dataset_id", ""),
+            chunk_count=getattr(document,"chunk_count",None),
+            run=getattr(document,"run",None),
         )
 
 

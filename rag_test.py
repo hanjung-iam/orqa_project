@@ -20,20 +20,12 @@ from ragflow_client import create_ragflow_client
 
 def main() -> None:
 
-    print("\n[1/5] Loading configuration...")
+    print("\nLoading configuration...")
 
     config = create_config(
         use_rag=True,
         use_skill=False,
     )
-
-    print("\n[2/5] Validating configuration...")
-    try:
-        validate_config(config)
-    except Exception as exc:
-        print("\nConfiguration validation failed.")
-        print(str(exc))
-        sys.exit(1)
 
     print("\nRAGFlow configuration:")
     print(f"  Host                : {config.rag.host}")
@@ -42,7 +34,7 @@ def main() -> None:
     print(f"  Embedding model     : {config.rag.embedding_model}")
     print(f"  Chunk method        : {config.rag.chunk_method}")
 
-    print("\n[3/5] Connecting to RAGFlow...")
+    print("\nConnecting to RAGFlow...")
     try:
         ragflow = create_ragflow_client(config)
     except Exception as exc:
@@ -50,7 +42,7 @@ def main() -> None:
         print(f"Error: {exc}")
         sys.exit(1)
 
-    print("\n[4/5] Testing RAGFlow connection...")
+    print("\nTesting RAGFlow connection...")
 
     try:
         datasets_before = ragflow.test_connection()
@@ -67,22 +59,14 @@ def main() -> None:
 
     print(f"Existing datasets visible to this API key:{len(datasets_before)}")
 
-    print("\n[5/5] Checking ORQA datasets...")
+    print("\nChecking ORQA datasets...")
 
     try:
         datasets = ragflow.setup_orqa_datasets(
-            pdf_dataset_name=(
-                config.rag.pdf_dataset_name
-            ),
-            md_dataset_name=(
-                config.rag.md_dataset_name
-            ),
-            embedding_model=(
-                config.rag.embedding_model
-            ),
-            chunk_method=(
-                config.rag.chunk_method
-            ),
+            pdf_dataset_name=(config.rag.pdf_dataset_name),
+            md_dataset_name=(config.rag.md_dataset_name),
+            embedding_model=(config.rag.embedding_model),
+            chunk_method=(config.rag.chunk_method),
         )
     except Exception as exc:
         print("\nFailed to setup ORQA datasets.")
@@ -117,57 +101,29 @@ def main() -> None:
 
     errors = []
     if not pdf_dataset.id:
-        errors.append(
-            "PDF Dataset does not have an ID."
-        )
-
+        errors.append("PDF Dataset does not have an ID.")
     if pdf_dataset.name != config.rag.pdf_dataset_name:
-        errors.append(
-            "PDF Dataset name does not match configuration."
-        )
-
-    if (
-        pdf_dataset.chunk_method
-        != config.rag.chunk_method
-    ):
-        errors.append(
-            "PDF Dataset chunk method does not match configuration."
-        )
+        errors.append("PDF Dataset name does not match configuration.")
+    if ( pdf_dataset.chunk_method!= config.rag.chunk_method):
+        errors.append( "PDF Dataset chunk method does not match configuration.")
+    if (pdf_dataset.embedding_model!= config.rag.embedding_model):
+        errors.append("PDF Dataset embedding model does not match configuration.")
 
 
     if not md_dataset.id:
-        errors.append(
-            "Markdown Dataset does not have an ID."
-        )
-
+        errors.append("Markdown Dataset does not have an ID.")
     if md_dataset.name != config.rag.md_dataset_name:
-        errors.append(
-            "Markdown Dataset name does not match configuration."
-        )
+        errors.append("Markdown Dataset name does not match configuration.")
 
-    if md_dataset.name != config.rag.md_dataset_name:
-        errors.append(
-        "Markdown Dataset name does not match configuration."
-        )
-        
-    if (
-    pdf_dataset.embedding_model
-    != md_dataset.embedding_model
-    ):
-        errors.append(
-        "PDF and Markdown datasets use different embedding models."
-        )
+      
+    if (pdf_dataset.embedding_model!= md_dataset.embedding_model):
+        errors.append("PDF and Markdown datasets use different embedding models.")
+    if (md_dataset.chunk_method != config.rag.chunk_method):
+        errors.append("Markdown Dataset chunk method does not match configuration.")
+    if (md_dataset.embedding_model!= config.rag.embedding_model):
+        errors.append("Markdown Dataset embedding model does not match configuration.")
 
-    if (
-        md_dataset.chunk_method
-        != config.rag.chunk_method
-    ):
-        errors.append(
-            "Markdown Dataset chunk method does not match "
-            "configuration."
-        )
     if errors:
-
         print("\nPhase 2 FAILED.")
         print("Problems:")
         for error in errors:
