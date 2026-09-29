@@ -23,6 +23,16 @@ class RAGFlowDocInfo:
     chunk_count: Optional[int] 
     run: Optional[str] # 文件處理狀態
 
+@dataclass(frozen=True)
+class RAGFlowRetrievalChunk:
+    id: str
+    content: str # Chunk 的文字內容
+    score: Optional[float] # Retrieval score
+    document_name: Optional[str]
+    dataset_id: Optional[str]
+    document_id: Optional[str]
+    page: Optional[int]
+
 class RAGFlowClient:
 
     def __init__(self,host: str,api_key: str):
@@ -304,6 +314,58 @@ class RAGFlowClient:
             latest_status[document_id]
             for document_id in document_ids
         ]
+
+    def retrieve(
+        self,
+        dataset_names: list[str],
+        question: str,
+        document_ids: Optional[list[str]]=None,
+        page: int=1,
+        page_size: int=5, # 最後取得多少Chunks
+        sim_threshold: float=0.2,
+        vector_sim_weight: float=0.3,
+        top_k: int=100, # retrieval candidate 數量上限
+        keyword: bool = False,
+        rerank_id: Optional[str]=None,
+    ) -> list[RAGFlowRetrievalChunk]:
+        
+        if not dataset_names:
+            raise ValueError("dataset_names cannot be empty.")
+        if not question or not question.strip():
+            raise ValueError("question cannot be empty.")
+        if page < 1:
+            raise ValueError("page must be >= 1.")
+        if page_size < 1:
+            raise ValueError("page_size must be >= 1.")
+        if not 0.0 <= sim_threshold <= 1.0:
+            raise ValueError( "similarity_threshold must be between 0 and 1.")
+        if not 0.0 <= vector_sim_weight <= 1.0:
+            raise ValueError("vector_similarity_weight must be between 0 and 1.")
+        if top_k < 1:
+            raise ValueError("top_k must be >= 1.")
+
+        dataset_ids = []
+        for dataset_name in dataset_names:
+            dataset = self.get_dataset_by_name(dataset_name)
+
+            if dataset is None:
+                raise RuntimeError(f"Dataset '{dataset_name}' does not exist.")
+            dataset_ids.append(dataset.id)
+
+        chunks = self.client.retrieve(
+            dataset_ids=dataset_ids,
+            document_ids=document_ids or [],
+            question=question,
+            page=page,
+            page_size=page_size,
+            similarity_threshold=sim_threshold,
+            vector_similarity_weight=vector_sim_weight,
+            top_k=top_k,
+            rerank_id=rerank_id,
+            keyword=keyword,
+        )
+
+        return [self._to_retrieval_chunk(chunk) for chunk in chunks]
             
 
     @staticmethod
@@ -326,6 +388,33 @@ class RAGFlowClient:
             dataset_id=getattr(document, "dataset_id", ""),
             chunk_count=getattr(document,"chunk_count",None),
             run=getattr(document,"run",None),
+        )
+
+    @staticmethod
+    def _to_retrieval_chunk(chunk) -> RAGFlowRetrievalChunk:
+        content = getattr(chunk, "content", "")
+        score = getattr(chunk, "score", None)
+        document_name = getattr(chunk, "document_name", None)
+        if document_name is None:
+            document_name = getattr(chunk, "docnm_kwd", None)
+        dataset_id = getattr(chunk, "dataset_id", None)
+
+        document_id = getattr(chunk, "document_id", None)
+        if document_id is None:
+            document_id = getattr(chunk, "doc_id", None)
+
+        page = getattr(chunk, "page", None)
+        if page is None:
+            page = getattr(chunk, "page_num", None)
+
+        return RAGFlowRetrievalChunk(
+            id=str(getattr(chunk, "id", "")),
+            content= str(content),
+            score=score,
+            document_name=document_name,
+            dataset_id=dataset_id,
+            document_id=document_id,
+            page=page
         )
 
 

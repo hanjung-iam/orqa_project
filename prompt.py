@@ -17,24 +17,41 @@ from skill import Skill
 
 
 BASIC_INSTRUCTION = (
-    "Given the context (following Context:), "
-    "select the most appropriate answer to the question "
-    "(following Question:). "
-    "Answer exactly one letter: 'A', 'B', 'C', or 'D'. "
+    "Read the Context, Question, and Options carefully before answering.\n"
+    "There is only one answer for each question."
+    "Output exactly one letter: 'A', 'B', 'C', or 'D'. "
     "Do not output any other text.\n"
 )
 
 # Skill 模式使用的 instruction
 # Skill instruction 會在後面接上
 SKILL_INSTRUCTION = (
-    "Read the Context and Question carefully.\n"
-    "Follow the provided ORQA skill.\n"
-    "Output exactly one letter: A, B, C, or D.\n"
+    "Follow the provided skill instructions carefully.\n"
+    "Use it as a resoning and formulation guide.\n"
+    "Read the Context, Question, and Options before answering."
+    "There is only one answer for each question."
+    "Output exactly one letter: A, B, C, or D."
+    "Do not output any other text.\n"
+)
+
+RAG_INSTRUCTION = (
+    "The following retrieved knowledge may be useful for answering the optimization problem.\n\n"
+    "Use it as supporting information.\n"
+    "The retrieved knowledge may contain information that is not directly relevant to the current question.\n"
+    "Do not blindly follow retrieved information if it conflicts with the actual problem statement.\n\n"
+    "Read the Context, Question, and Options before answering.\n"
+    "There is only one answer for each question."
+    "Output exactly one leter: A, B, C, or D."
+    "Do not output any other text.\n"
 )
 
 # 放在retrieved chunks 的前面
 RAG_CONTEXT_HEADER = (
-    "Retrieved Context:\n"
+    "=== RETRIEVED KNOWLEDGE ===\n\n"
+)
+
+RAG_CONTEXT_FOOTER = (
+    "=== END RETRIEVED KNOWLEDGE ===\n\n"
 )
 
 # 放在最後引導模型回答
@@ -98,6 +115,7 @@ def format_rag_context(
     return (
         RAG_CONTEXT_HEADER
         + RAG_CHUNK_SEPARATOR.join(chunks)
+        + RAG_CONTEXT_FOOTER
     )
 
 # 建立 prompt中的instruction，根據是否使用 Skill 或 RAG 來決定 instruction 的內容
@@ -138,7 +156,7 @@ def build_instruction(
             retrieved_chunks
         )
 
-        instruction = BASIC_INSTRUCTION
+        instruction = RAG_INSTRUCTION
 
         if rag_context:
             instruction += (

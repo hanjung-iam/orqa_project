@@ -4,6 +4,7 @@ from dataset import load_dataset
 from skill import load_skill
 from llm import create_llm_client
 from inference import InferenceEngine
+from ragflow_client import create_ragflow_client
 from parser import index_to_answer
 from storage import create_storage
 from evaluation import Evaluator
@@ -42,6 +43,15 @@ def main():
     print("[Creating client]")
     llm_client = create_llm_client(config)
 
+    ragflow_client = None
+    if config.experiment.use_rag:
+        print("[Creating RagFlow client]")
+        ragflow_client = create_ragflow_client(config)
+        dataset = ragflow_client.test_connection()
+        print("Ragflow connection successful")
+        print(f"Num of Datasets: {len(dataset)}")
+
+
     storage = create_storage(config.output.base_dir)
     print(f"Storage dir: {storage.result_dir}")
 
@@ -54,7 +64,10 @@ def main():
     print("[Creating inference engine]")
     engine = InferenceEngine(
         llm_client=llm_client,
+        rag_client=ragflow_client,
         skill=skill,
+        rag=config.experiment.use_rag,
+        rag_config=config.rag,
     )
     print("[Running inference]")
     completed_indices = (storage.get_completed_indices())

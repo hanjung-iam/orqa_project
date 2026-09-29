@@ -15,9 +15,7 @@ from ragflow_client import (
 
 def parse_arguments():
     """
-        python rag/upload_phase3.py \
-            --pdf "data/OR textbook.pdf" \
-            --markdown "data/structured.md"
+        python rag_upload.py --pdf "___.pdf" --markdown "___.md"
     """
     parser = argparse.ArgumentParser(
         description=("Upload ORQA textbook materials to RAGFlow.")

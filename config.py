@@ -85,6 +85,10 @@ class RAGSettings:
 
     # Retrieval
     top_k: int = 5
+    similarity_threshold: float = 0.2
+    vector_similarity_weight: float = 0.3
+    keyword: bool = False
+    rerank_id: Optional[str] = None
 
     # 是否在結果中保存 retrieved chunks
     save_retrieved_chunks: bool = True
@@ -232,6 +236,10 @@ def create_config(
         embedding_model=_get_env("RAGFLOW_EMBEDDING_MODEL","voyage-4-large"),
         chunk_method=_get_env("RAGFLOW_CHUNK_METHOD", "naive"),
         top_k=_get_int_env("RAG_TOP_K", 5),
+        similarity_threshold=_get_float_env("RAG_SIMILARITY_THRESHOLD", 0.2),
+        vector_similarity_weight=_get_float_env("RAG_VECTOR_SIMILARITY_WEIGHT", 0.3),
+        keyword=_get_bool_env("RAG_KEYWORD", False),
+        rerank_id=(_get_env("RAG_RERANK_ID") or None),
         save_retrieved_chunks=_get_bool_env(
             "RAG_SAVE_RETRIEVED_CHUNKS",
             True,
@@ -457,6 +465,11 @@ def validate_config(config: ExperimentConfig) -> None:
             raise ValueError(
                 "RAG_TOP_K must be greater than 0."
             )
+
+        if not (0.0 <= config.rag.similarity_threshold <= 1.0):
+            raise ValueError("RAG_SIMILARITY_THRESHOLD must be between 0 and 1.")
+        if not (0.0 <= config.rag.vector_similarity_weight <= 1.0):
+            raise ValueError("RAG_VECTOR_SIMILARITY_WEIGHT must be between 0 and 1.")
         
     if config.llm.provider != "anthropic":
         raise ValueError(

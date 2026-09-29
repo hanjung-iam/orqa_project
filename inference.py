@@ -4,6 +4,7 @@ from dataset import Question
 from llm import ClaudeClient, LLMResponse
 from parser import AnswerParser, ANSWER_TO_INDEX
 from prompt import Prompt, build_prompt
+from ragflow_client import RAGFlowClient, RAGFlowRetrievalChunk
 
 REPAIR_MODEL = "claude-haiku-4-5-20251001"
 
@@ -52,10 +53,13 @@ class InferenceResult:
 
 class InferenceEngine:
 
-    def __init__(self, llm_client: ClaudeClient, skill=None, parser: AnswerParser | None = None):
+    def __init__(self, llm_client: ClaudeClient, rag_client: RAGFlowClient, skill=None, rag = None, rag_config=None, parser: AnswerParser | None = None):
        
         self.llm_client = llm_client
         self.skill = skill
+        self.rag = rag
+        self.rag_client = rag_client
+        self.rag_config = rag_config
 
         if parser is None:
             parser = AnswerParser()
@@ -64,6 +68,29 @@ class InferenceEngine:
 
 
     def run(self, question: Question, retrieved_chunks=None) -> InferenceResult:
+
+        retrieved_chunks = None
+        retrieval_query = None
+        if self.rag:
+            retrieval_query = self._build_retrieval_query(question)
+            retrieved_chunks(
+                self.rag_client.retrieve(
+                    dataset_name=[
+                        self.rag_config.pdf_dataset_name,
+                        self.rag_config.md_dataset_name
+                    ],
+                    question=retrieval_query,
+                    document_ids=None,
+                    page=1,
+                    page_size=self.rag_config.top_k,
+                    sim_threshold=self.rag_config.similarity_threshold,
+                    vector_sim_weight=self.rag_config.vector_similarity_weight,
+                    top_k = 512,
+                    keyword=self.rag_config.keyword,
+                    rerank_id= self.rag_config.rerank_id
+                )
+            )
+
 
         prompt = build_prompt(
             question=question,
@@ -110,7 +137,22 @@ class InferenceEngine:
             repair_llm_response=repair_llm_response,
         )
 
-
+    @staticmethod
+    def _build_retrieval_query(question) -> str:
+        return(
+            "Context: "
+            + question.context
+            + "\nQuestion: "
+            + question.quesion
+            + "\nA. "
+            + str(question.options[0])
+            + "\nB. "
+            + str(question.options[1])
+            + "\nC. "
+            + str(question.options[2])
+            + "\nD. "
+            + str(question.options[3])
+        )
 
     def _repair_answer(self, raw_response: str) -> tuple[LLMResponse, str | None]:
 
