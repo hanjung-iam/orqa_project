@@ -18,3 +18,7 @@ logs/
 
 .DS_Store
 Thumbs.db
+# ORQA v2: local data / artifacts (never commit)
+data/
+backups/
+.pytest_cache/
