@@ -267,7 +267,6 @@ def main(argv=None) -> int:
         print(f"RAG    : {rag.collection_name} mode={config.rag.retrieval.mode} chunks={len(rag.chunks)}")
 
     if args.dry_run:
-        from orqa.engine import InferenceEngine
         q = dataset[0]
         retrieval = rag.retrieve_for_question(q) if rag else None
         prompt = build_prompt(q, config.experiment.method, skill=skill,

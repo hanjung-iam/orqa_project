@@ -1,0 +1,14 @@
+# ORQA v2 — 本機 LLM（Hugging Face Transformers + CUDA + 4-bit）
+# 只在 GPU 機器（RTX 4070 SUPER 12GB）安裝。
+#
+# 1) 先依照驅動程式支援的 CUDA 版本安裝 torch（範例為 CUDA 12.8）：
+#      pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu128
+# 2) 再安裝其餘套件：
+#      pip install -r requirements-gpu.txt
+# 3) 安裝完成後建議執行 `pip freeze > requirements-gpu.lock.txt` 固定實際版本。
+-r requirements.txt
+torch==2.13.0
+transformers==5.15.1
+accelerate==1.14.0
+bitsandbytes
+huggingface_hub

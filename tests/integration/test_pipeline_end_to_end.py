@@ -15,7 +15,7 @@ import yaml
 
 import main as runner
 import orqa.llm as llm_module
-from orqa.experiment import Experiment, ExperimentError
+from orqa.experiment import ExperimentError
 from orqa.storage import (CHECKED_INVALID, EVALUATION_POST, EVALUATION_RAW, EXPERIMENT, HAIKU_ANALYSIS,
                           INVALID_ANSWERS, POST_PREDICTIONS, RAW_PREDICTIONS, WRONG_POST, WRONG_RAW,
                           read_jsonl)
