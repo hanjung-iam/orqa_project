@@ -106,9 +106,11 @@ CLI 可覆寫部分設定：`--method`、`--provider`、`--model-id`、`--limit`
 
 ---
 
-## 4. 本機模型（Qwen）
+## 4. 本機模型（Hugging Face Transformers）
 
-預設模型為 **`Qwen/Qwen3.5-9B`**（Apache-2.0、9.65B 參數、context 262K），4-bit NF4 量化後估計約需 6–8 GB VRAM（含 KV cache；尚未在 RTX 4070 SUPER 上實測），應可在 12 GB 上執行。較小的 baseline 可用 `Qwen/Qwen3.5-4B`。
+### 4.1 預設模型：Qwen
+
+預設模型為 **`Qwen/Qwen3.5-9B`**（Apache-2.0、9.65B 參數、context 262K），4-bit NF4 量化後估計約需 6–8 GB VRAM（含 KV cache），應可在 12 GB 上執行。較小的 baseline 可用 `Qwen/Qwen3.5-4B`。
 
 ```bash
 huggingface-cli download Qwen/Qwen3.5-9B
@@ -119,6 +121,102 @@ python main.py --provider transformers --method basic --limit 5                 
 - Qwen3.5 之後的官方 repo 沒有 `-Instruct` 後綴；沒有 `-Base` 的 repo 就是對話模型。
 - Qwen3.5 預設會先輸出思考內容（thinking）。主實驗設定 `enable_thinking: false`；若改為 `true`，請一併調高 `max_new_tokens`，否則思考段落被截斷會造成大量 Invalid。
 - 27B（Qwen3.5 / 3.6 / 3.8）4-bit 約需 15 GB 以上，超過 12 GB，需要 CPU offload，速度會大幅下降，目前不使用。
+
+### 4.2 改用其他開源模型（以 Gemma 4 為例）
+
+任何能用 Hugging Face Transformers 載入、且有 chat template 的對話模型都可以使用，**不需要修改程式碼**，只要更換 `model_id`。以下以 Google Gemma 4 為例。
+
+#### 步驟 1：選擇模型
+
+在 Hugging Face 模型頁面確認：
+
+| 檢查項目 | 說明 |
+|---|---|
+| 對話（Instruct）版本 | Gemma 選 `-it` 結尾；Qwen3.5 以後選不帶 `-Base` 的版本。不要用 base 模型 |
+| Transformers 格式 | 不要選 `*-gguf`、`*-ct` 等其他推論框架專用的 repo |
+| 授權與 gated | Gemma 4 為 Apache-2.0、不需申請。若模型是 gated（頁面要求同意授權），先在網頁上同意，並在 `.env` 設定 `HF_TOKEN` |
+| Transformers 版本 | 看 repo 中 `config.json` 的 `transformers_version`。Gemma 4 需要 ≥ 5.10（`requirements-gpu.txt` 為 5.15.1） |
+| VRAM 估算 | 4-bit 約為「參數量（B）× 0.5 GB」，再加 1–2 GB 給 KV cache 等 |
+
+Gemma 4 可選的版本（VRAM 為估算值，尚未實測）：
+
+| Model ID | 參數量 | 4-bit 估計 VRAM | 12 GB 可行性 |
+|---|---|---|---|
+| `google/gemma-4-E4B-it` | 約 8.0B（含 per-layer embedding，有效約 4B） | 約 5–6 GB | ✅ 輕量 baseline |
+| `google/gemma-4-12B-it` | 約 12.0B | 約 7–9 GB | ✅ 建議 |
+| `google/gemma-4-26B-A4B-it` | 約 25.8B（MoE） | 約 14–16 GB | ❌ 需要 CPU offload |
+| `google/gemma-4-31B-it` | 約 31.3B | 約 17–19 GB | ❌ 需要 CPU offload |
+
+#### 步驟 2：下載模型
+
+```bash
+huggingface-cli download google/gemma-4-12B-it
+```
+
+（也可以略過這一步，第一次執行時會自動下載。）
+
+#### 步驟 3：切換模型（三種方式擇一）
+
+**A. CLI 單次覆寫**（最快，適合 smoke test）
+
+```bash
+python main.py --provider transformers --model-id google/gemma-4-12B-it --method basic --limit 5
+```
+
+**B. 修改 `config/experiment.yaml`**
+
+```yaml
+llm:
+  provider: transformers
+  transformers:
+    model_id: google/gemma-4-12B-it
+```
+
+**C. 為每個模型建立獨立設定檔**（建議用於正式比較實驗）
+
+複製 `config/experiment.yaml` 為 `config/gemma4_12b.yaml`，只修改 `llm` 區塊，其他設定（資料集、Skill、RAG、Prompt）保持相同，確保比較公平：
+
+```yaml
+llm:
+  provider: transformers
+  transformers:
+    model_id: google/gemma-4-12B-it
+    quantization: 4bit
+    max_new_tokens: 512
+    batch_size: 1
+    enable_thinking: false
+```
+
+```bash
+python main.py --config config/gemma4_12b.yaml --method skill_rag
+```
+
+每個實驗都有獨立的 `results/<experiment_id>/`（ID 含模型名稱），不同模型的結果不會互相覆蓋；`python main.py --list` 可一起列出比較。
+
+#### 步驟 4：驗證
+
+```bash
+# Provider 整合測試（指定要測的模型）
+ORQA_TEST_HF_MODEL=google/gemma-4-12B-it python -m pytest tests/integration/test_transformers_provider.py -m gpu -v -s
+# Windows PowerShell：
+#   $env:ORQA_TEST_HF_MODEL="google/gemma-4-12B-it"; python -m pytest tests/integration/test_transformers_provider.py -m gpu -v -s
+
+# 5 題 smoke test
+python main.py --provider transformers --model-id google/gemma-4-12B-it --method basic --limit 5
+```
+
+跑完後檢查：
+
+- `experiment.json` 的 `provider_info`：`loaded_model_class`（實際載入的模型類別）、`gpu.max_memory_allocated_gb`（實際 VRAM 用量）、`system_role_merged_into_user`
+- `evaluation_raw.json` 的 `invalid_count` 與 `parse_method_counts`：Invalid 很多代表模型沒有照格式輸出，可檢查 `predictions_raw.jsonl` 的 `raw_response` 與 `stop_reason`（`max_new_tokens` 表示輸出被截斷）
+
+#### 注意事項
+
+- **Prompt 一致**：所有模型使用相同的 System / User Prompt，只有 chat template 的格式不同。若模型的 chat template 不接受 `system` 角色（例如舊版 Gemma），程式會自動把 System Prompt 放在 user 訊息最前面（文字內容不變），並在 `experiment.json` 記錄 `system_role_merged_into_user: true`。
+- **多模態架構**：Gemma 4 與 Qwen3.5 都是多模態架構。程式先用 `AutoModelForCausalLM` 載入，失敗時自動改用 `AutoModelForImageTextToText`；也可以在設定中直接指定 `auto_model_class: image_text_to_text`。
+- **Thinking**：`enable_thinking` 只對支援此選項的 chat template（例如 Qwen3.5）有效，其他模型會忽略。
+- **VRAM 不足（CUDA out of memory）**：程式會自動把 batch 對半拆分重試；仍不足時可降低 `batch_size`、`max_new_tokens`，或改用較小的模型。
+- Gemma 4 的設定與 VRAM 數字尚未在 GPU 機器上實測，第一次使用請先跑步驟 4 的測試。
 
 ---
 
