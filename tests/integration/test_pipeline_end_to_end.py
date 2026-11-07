@@ -113,6 +113,7 @@ def test_full_pipeline_with_interrupt_and_resume(setup):
     for key in ("index", "question_type", "prediction", "ground_truth", "question", "context", "options", "raw_response"):
         assert key in w5
     assert (w5["prediction_letter"], w5["ground_truth_letter"]) == ("A", "B")
+    assert (w5["target_answer"], w5["target_answer_letter"]) == (1, "B")
     wrong_post = json.loads((exp_dir / WRONG_POST).read_text(encoding="utf-8"))
     w1 = next(w for w in wrong_post if w["index"] == 1)
     assert w1["prediction_source"] == "haiku" and w1["prediction_letter"] == "C" and w1["raw_response"].startswith("I believe")

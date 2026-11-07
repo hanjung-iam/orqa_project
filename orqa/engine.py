@@ -87,6 +87,8 @@ class InferenceEngine:
             "question_type": question.question_type,
             "prediction": parsed.prediction,           # None = Invalid
             "prediction_letter": parsed.letter,
+            "target_answer": question.target_answer,
+            "target_answer_letter": "ABCD"[question.target_answer],
             "is_valid": parsed.is_valid,
             "parse_method": parsed.method,
             "raw_response": response.text,
@@ -164,6 +166,8 @@ class InferenceEngine:
                         "index": q.index,
                         "question_type": q.question_type,
                         "prediction": None,
+                        "target_answer": q.target_answer,
+                        "target_answer_letter": "ABCD"[q.target_answer],
                         "raw_response": response.text,
                         "stop_reason": response.stop_reason,
                         "model_id": response.model_id,

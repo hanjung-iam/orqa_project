@@ -44,9 +44,11 @@ def test_all_modes_share_engine(mode, dataset_file, skill_zip, tmp_path):
                 "inference_mode", "input_tokens", "output_tokens"):
         assert key in r0
     assert r0["inference_mode"] == mode and r0["prediction"] == 0 and r0["parse_method"] == "strict"
+    assert all((raw[i]["target_answer"], raw[i]["target_answer_letter"]) == (i % 4, "ABCD"[i % 4]) for i in raw)
 
     inv = read_jsonl(storage.path(INVALID_ANSWERS)).records
     assert [r["index"] for r in inv] == [1] and inv[0]["prediction"] is None
+    assert (inv[0]["target_answer"], inv[0]["target_answer_letter"]) == (1, "B")
 
     p0 = provider.prompts[0]
     if skill:

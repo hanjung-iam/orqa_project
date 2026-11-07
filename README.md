@@ -230,7 +230,7 @@ python main.py --resume <id> --stage evaluate                   # 只重新計�
 | 檔案 | 類型 | 內容 |
 |---|---|---|
 | `experiment.json` | metadata | 設定 snapshot、資料集 / Skill / Prompt / RAG 指紋、模型資訊、狀態、每次執行紀錄與 token 用量 |
-| `predictions_raw.jsonl` | **不可變** | 原始預測（index、question_type、prediction、raw_response、parse_method、model_id、provider、inference_mode、tokens …） |
+| `predictions_raw.jsonl` | **不可變** | 原始預測（index、question_type、prediction、target_answer、raw_response、parse_method、model_id、provider、inference_mode、tokens …） |
 | `invalid_answers.jsonl` | append-only | 原始輸出無法解析的題目（prediction = null） |
 | `retrievals.jsonl` | append-only | RAG 模式每題的檢索結果 |
 | `inference_errors.jsonl` | append-only | 推論失敗紀錄 |

@@ -85,11 +85,14 @@ def test_post_analysis_end_to_end(run):
     assert post[0]["prediction"] == 0 and post[0]["prediction_source"] == "raw"
     assert post[1]["prediction"] == 2 and post[1]["prediction_source"] == "haiku"
     assert post[2]["prediction"] is None and post[3]["prediction"] is None
+    assert all((post[i]["target_answer"], post[i]["target_answer_letter"]) == (i % 4, "ABCD"[i % 4]) for i in post)
 
     checked = {r["index"]: r for r in read_jsonl(storage.path(CHECKED_INVALID)).records}
     assert sorted(checked) == [2, 3, 4]
-    for key in ("index", "original_prediction", "raw_response", "analysis_status", "failure_reason"):
+    for key in ("index", "original_prediction", "raw_response", "analysis_status", "failure_reason",
+                "target_answer", "target_answer_letter"):
         assert key in checked[3]
+    assert (checked[3]["target_answer"], checked[3]["target_answer_letter"]) == (3, "D")
 
 
 def test_idempotent_and_retry_failed(run):

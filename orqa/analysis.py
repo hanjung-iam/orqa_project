@@ -164,7 +164,7 @@ def run_post_analysis(storage: ExperimentStorage, dataset: ORQADataset, analyzer
                 summary.aborted = True
                 break
 
-    write_post_analysis_files(storage)
+    write_post_analysis_files(storage, dataset)
     latest = storage.latest(HAIKU_ANALYSIS)
     for r in invalid:
         status = latest.get(r["index"], {}).get("analysis_status")
@@ -177,17 +177,30 @@ def run_post_analysis(storage: ExperimentStorage, dataset: ORQADataset, analyzer
     return summary
 
 
-def merge_predictions(raw: dict[int, dict], analyses: dict[int, dict]) -> tuple[list[dict], list[dict]]:
+def _target(idx: int, r: dict, dataset: Optional[ORQADataset]) -> tuple[Optional[int], Optional[str]]:
+    """target answer 以 dataset 為準；沒有 dataset 時使用 raw 紀錄中的欄位。"""
+    if dataset is not None and dataset.has(idx):
+        t = dataset.get(idx).target_answer
+    else:
+        t = r.get("target_answer")
+    return t, ("ABCD"[t] if t is not None else None)
+
+
+def merge_predictions(raw: dict[int, dict], analyses: dict[int, dict],
+                      dataset: Optional[ORQADataset] = None) -> tuple[list[dict], list[dict]]:
     """依 index 合併原始預測與 Haiku 分析 → (post-analysis predictions, checked invalid)。"""
     post, checked = [], []
     for idx in sorted(raw):
         r = raw[idx]
         a = analyses.get(idx)
         status = a.get("analysis_status") if a else None
+        target, target_letter = _target(idx, r, dataset)
         rec = {
             "index": idx,
             "question_type": r.get("question_type"),
             "raw_prediction": r.get("prediction"),
+            "target_answer": target,
+            "target_answer_letter": target_letter,
             "analysis_status": None,
         }
         if r.get("prediction") is not None:
@@ -202,6 +215,8 @@ def merge_predictions(raw: dict[int, dict], analyses: dict[int, dict]) -> tuple[
                 "index": idx,
                 "question_type": r.get("question_type"),
                 "original_prediction": r.get("prediction"),
+                "target_answer": target,
+                "target_answer_letter": target_letter,
                 "raw_response": r.get("raw_response"),
                 "analysis_status": status or "not_analyzed",
                 "failure_reason": (a or {}).get("failure_reason") or (
@@ -214,8 +229,9 @@ def merge_predictions(raw: dict[int, dict], analyses: dict[int, dict]) -> tuple[
     return post, checked
 
 
-def write_post_analysis_files(storage: ExperimentStorage) -> tuple[list[dict], list[dict]]:
-    post, checked = merge_predictions(storage.raw_predictions(), storage.latest(HAIKU_ANALYSIS))
+def write_post_analysis_files(storage: ExperimentStorage,
+                              dataset: Optional[ORQADataset] = None) -> tuple[list[dict], list[dict]]:
+    post, checked = merge_predictions(storage.raw_predictions(), storage.latest(HAIKU_ANALYSIS), dataset)
     storage.write_derived_jsonl(POST_PREDICTIONS, post)
     storage.write_derived_jsonl(CHECKED_INVALID, checked)
     return post, checked

@@ -76,7 +76,9 @@ def evaluate(dataset: ORQADataset, predictions: dict[int, dict[str, Any]], *, ki
             "prediction_letter": index_to_answer(pred),
             "prediction_status": label if label in ("invalid", "missing") else "wrong",
             "prediction_source": (rec or {}).get("prediction_source", "raw" if rec else None),
-            "ground_truth": q.target_answer,
+            "target_answer": q.target_answer,
+            "target_answer_letter": index_to_answer(q.target_answer),
+            "ground_truth": q.target_answer,              # 規格欄位名稱，與 target_answer 相同
             "ground_truth_letter": index_to_answer(q.target_answer),
             "question": q.question,
             "context": q.context,
@@ -163,7 +165,7 @@ def run_evaluation(storage, dataset: ORQADataset) -> dict[str, Any]:
 
     raw = storage.raw_predictions()
     if not storage.exists(POST_PREDICTIONS):
-        write_post_analysis_files(storage)
+        write_post_analysis_files(storage, dataset)
     post = index_records(read_jsonl(storage.path(POST_PREDICTIONS)).records, name=POST_PREDICTIONS)
     checked = read_jsonl(storage.path(CHECKED_INVALID)).records
 
