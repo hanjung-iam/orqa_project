@@ -275,6 +275,14 @@ def load_config(path: str | Path | None = None, *, validate: bool = True) -> Con
     return config
 
 
+def config_from_dict(data: dict[str, Any], *, validate: bool = True) -> Config:
+    """由 experiment.json 中的 config snapshot 重建設定（resume 用）。"""
+    config = _build(Config, data, "config")
+    if validate:
+        validate_config(config)
+    return config
+
+
 def apply_overrides(config: Config, *, validate: bool = True, **overrides: Any) -> Config:
     """
     以 CLI 參數覆寫設定。支援的 key：
