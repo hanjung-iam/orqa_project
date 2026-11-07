@@ -1,0 +1,103 @@
+# ============================================================
+# ORQA Experiment Configuration (v2)
+#
+# 執行：python main.py --config config/experiment.yaml
+# 常用 CLI 覆寫：--method / --provider / --model-id / --limit / --resume
+# API Key 一律放在 .env（ANTHROPIC_API_KEY / VOYAGE_API_KEY / HF_TOKEN），不要寫在這裡。
+# ============================================================
+
+experiment:
+  name: orqa_experiment
+  method: basic                 # basic | skill | rag | skill_rag
+  output_dir: results           # 每次實驗建立 results/<experiment_id>/
+  experiment_id: null           # null → 自動產生；指定既有 ID 等同 --resume
+  limit: null                   # 只跑前 N 題（smoke test 用），null = 全部
+  max_consecutive_errors: 5     # 連續 N 題 API/推論失敗就中止（已完成的題目不受影響）
+
+dataset:
+  name: ORQA_test
+  path: dataset/ORQA_test.jsonl
+
+skill:                          # method 為 skill / skill_rag 時必填
+  path: skill/orqa-formulation-mcq-2.skill
+  source_type: null             # zip | directory | null（依副檔名自動判斷）
+
+prompt:
+  version: v2
+
+llm:
+  provider: anthropic           # anthropic | transformers
+
+  anthropic:
+    model_id: claude-sonnet-5-5
+    max_tokens: 2048
+    timeout: 120
+    max_retries: 5              # SDK 內建 exponential backoff（429 / 5xx / 連線錯誤）
+    prompt_caching: true
+    cache_ttl: 1h
+    # 直接傳給 messages.create 的額外參數，例如：
+    #   output_config: {effort: low}
+    # 注意：API 版本 2026-10-21 起 temperature / top_p / top_k 一律回 400，不可設定。
+    extra_params: {}
+
+  transformers:
+    model_id: Qwen/Qwen3.5-9B   # 備選 baseline：Qwen/Qwen3.5-4B
+    revision: null
+    quantization: 4bit          # none | 4bit | 8bit
+    bnb_4bit_quant_type: nf4
+    bnb_4bit_compute_dtype: bfloat16
+    bnb_4bit_use_double_quant: true
+    dtype: bfloat16
+    device_map: auto            # null → 不使用 device_map
+    max_memory: null            # 例如 {0: "11GiB", cpu: "32GiB"}
+    auto_model_class: causal_lm # causal_lm | image_text_to_text（Qwen3.5 為多模態架構，causal_lm 失敗時自動改用另一個）
+    attn_implementation: null   # 例如 sdpa
+    trust_remote_code: false
+    max_new_tokens: 512
+    do_sample: false            # greedy decoding；do_sample=false 時不可設定 temperature/top_p/top_k
+    temperature: null
+    top_p: null
+    top_k: null
+    repetition_penalty: null
+    batch_size: 1
+    enable_thinking: false      # Qwen3.5 hybrid thinking；主實驗關閉
+    empty_cache_every_batch: false
+
+post_analysis:                  # Invalid Answer 的 Haiku 後處理
+  enabled: true
+  provider: anthropic
+  model_id: claude-haiku-4-5-20251001
+  max_tokens: 1024
+  timeout: 120
+  max_retries: 5
+
+rag:                            # method 為 rag / skill_rag 時使用
+  documents:                    # 每份文件指定 chunking 策略（不再依檔名判斷）
+    - path: data/knowledge_base/StructuredOR.md
+      strategy: case_aware      # 以 "## CASE <id>" 為邊界
+    - path: data/knowledge_base/version_0.md
+      strategy: heading_based   # Markdown heading hierarchy
+
+  embedding:
+    provider: voyage
+    model: voyage-4-large
+    batch_size: 128
+    max_retries: 5
+    output_dimension: null      # null → 模型預設維度
+
+  vector_store:
+    provider: chromadb
+    persist_directory: data/vector_db
+    collection_prefix: orqa_kb  # 實際 collection 名稱 = prefix + index 設定的 hash
+
+  chunking:
+    chunk_size: 2048
+    stride: 256
+
+  retrieval:
+    mode: hybrid                # dense | bm25 | hybrid
+    similarity_threshold: 0.5   # 只作用於 Dense（cosine similarity = 1 - cosine distance）
+    dense_top_k: 15
+    bm25_top_k: 15
+    final_top_k: 5
+    rrf_k: 60
