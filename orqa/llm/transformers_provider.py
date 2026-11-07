@@ -142,11 +142,7 @@ class TransformersProvider(BaseLLMProvider):
 
     # --------------------------------------------------------------- generation
 
-    def render_chat(self, prompt: ChatPrompt) -> str:
-        messages = [
-            {"role": "system", "content": prompt.system},
-            {"role": "user", "content": prompt.user},
-        ]
+    def _apply_template(self, messages: list[dict]) -> str:
         kwargs = {"tokenize": False, "add_generation_prompt": True}
         try:
             return self.tokenizer.apply_chat_template(
@@ -155,6 +151,22 @@ class TransformersProvider(BaseLLMProvider):
         except TypeError:
             # 不支援 enable_thinking 參數的 chat template
             return self.tokenizer.apply_chat_template(messages, **kwargs)
+
+    def render_chat(self, prompt: ChatPrompt) -> str:
+        messages = [
+            {"role": "system", "content": prompt.system},
+            {"role": "user", "content": prompt.user},
+        ]
+        try:
+            return self._apply_template(messages)
+        except Exception as exc:
+            # 部分模型（例如舊版 Gemma）的 chat template 不接受 system role：
+            # 把 System Prompt 放在 user 訊息最前面，文字內容不變。
+            if "system" not in str(exc).lower():
+                raise
+            self.system_role_merged = True
+            merged = [{"role": "user", "content": prompt.system + "\n\n" + prompt.user}]
+            return self._apply_template(merged)
 
     def _generation_kwargs(self) -> dict[str, Any]:
         s = self.settings
@@ -271,6 +283,7 @@ class TransformersProvider(BaseLLMProvider):
             "device_map": s.device_map,
             "loaded_model_class": getattr(self, "loaded_model_class", None),
             "enable_thinking": s.enable_thinking,
+            "system_role_merged_into_user": getattr(self, "system_role_merged", False),
             "batch_size": s.batch_size,
             "generation_parameters": {
                 k: v for k, v in self._generation_kwargs().items() if k != "pad_token_id"
