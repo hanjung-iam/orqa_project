@@ -138,7 +138,7 @@ python main.py --provider transformers --method basic --limit 5                 
 | Transformers 版本 | 看 repo 中 `config.json` 的 `transformers_version`。Gemma 4 需要 ≥ 5.10（`requirements-gpu.txt` 為 5.15.1） |
 | VRAM 估算 | 4-bit 約為「參數量（B）× 0.5 GB」，再加 1–2 GB 給 KV cache 等 |
 
-Gemma 4 可選的版本（VRAM 為估算值，尚未在 RTX 4070 SUPER 上實測）：
+Gemma 4 可選的版本（VRAM 為估算值，尚未實測）：
 
 | Model ID | 參數量 | 4-bit 估計 VRAM | 12 GB 可行性 |
 |---|---|---|---|
