@@ -103,7 +103,8 @@ def list_experiments(output_dir: Path) -> None:
 
 # ---------------------------------------------------------------------- stages
 
-def stage_inference(exp: Experiment, config: Config, provider, dataset, skill, rag) -> bool:
+def stage_inference(exp: Experiment, config: Config, provider, dataset, skill, rag) -> tuple[bool, bool]:
+    """回傳 (是否全部完成, 是否遇到 fatal error)。"""
     from orqa.engine import InferenceAborted, InferenceEngine
     from orqa.llm.base import FatalLLMError
 
@@ -138,7 +139,7 @@ def stage_inference(exp: Experiment, config: Config, provider, dataset, skill, r
     if not complete:
         missing = len(set(dataset.indices) - exp.storage.completed_indices())
         print(f"[!] {missing} question(s) not completed. Resume with:  python main.py --resume {exp.id}")
-    return complete
+    return complete, status == STATUS_FAILED
 
 
 def _safe_info(provider) -> dict:
@@ -295,7 +296,11 @@ def main(argv=None) -> int:
 
     try:
         if run_inference:
-            complete = stage_inference(exp, config, provider, dataset, skill, rag)
+            complete, fatal = stage_inference(exp, config, provider, dataset, skill, rag)
+            if fatal:
+                print("Stopped because of a non-retryable error (check API key / model id / config). "
+                      f"Fix it, then resume with: python main.py --resume {exp.id}")
+                return 1
             if not complete and args.stage == "all":
                 print("Inference incomplete; post-analysis/evaluation will run on the completed questions only.")
         if args.stage in ("all", "post_analysis"):

@@ -162,6 +162,20 @@ def test_limit_then_extend(setup):
     assert ev["total_questions"] == 6
 
 
+def test_fatal_error_stops_before_post_analysis(setup, monkeypatch):
+    cfg_path, out, _, _ = setup
+    from orqa.llm.base import FatalLLMError
+
+    class BadKey(FakeProvider):
+        def _generate(self, prompt, *, json_schema=None):
+            raise FatalLLMError("401 invalid x-api-key")
+    monkeypatch.setattr(llm_module, "create_provider", lambda s: BadKey())
+    assert runner.main(["--config", str(cfg_path), "--experiment-id", "exp_f"]) == 1
+    meta = json.loads((out / "exp_f" / EXPERIMENT).read_text(encoding="utf-8"))
+    assert meta["experiment_status"] == "failed"
+    assert not (out / "exp_f" / EVALUATION_RAW).exists() and not (out / "exp_f" / RAW_PREDICTIONS).exists()
+
+
 def test_dry_run_creates_nothing(setup, capsys):
     cfg_path, out, _, _ = setup
     assert runner.main(["--config", str(cfg_path), "--dry-run"]) == 0
