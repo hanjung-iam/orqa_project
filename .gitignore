@@ -22,3 +22,6 @@ Thumbs.db
 data/
 backups/
 .pytest_cache/
+
+# website: backend 設定資料（範例題目、資料清單）需要 commit
+!website/backend/data/

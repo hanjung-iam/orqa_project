@@ -1,0 +1,42 @@
+# ============================================================
+# OptiSkill Demo — backend configuration
+#
+# API Key 只放在環境變數（website/backend/.env 或專案根目錄 .env），不要寫在這裡。
+# 相對路徑一律以本檔案所在的資料夾（website/backend/）為基準。
+# ============================================================
+
+llm:
+  # Baseline 與 Skill 共用同一組設定，確保比較公平
+  model_id: claude-sonnet-5-5
+  max_tokens: 16000
+  effort: medium              # low | medium | high | xhigh | max（Sonnet 5.5 API 預設 high）
+  show_thinking_summary: true # 顯示模型的思考摘要（adaptive thinking, display=summarized）
+  refusal_fallback: true      # 被安全分類器誤擋時，由 API 改用相容模型重跑（server-side fallback）
+  # 注意：目前 API 版本拒絕 temperature / top_p / top_k，因此不提供這些設定
+  request_timeout: 300        # SDK 單次請求逾時（秒）
+  branch_timeout: 420         # 單一分支一次回答的總時間上限（秒），超過顯示 Timeout
+  max_retries: 2              # SDK 對 429 / 5xx / 連線錯誤的自動重試次數
+
+prompts:
+  baseline: prompts/baseline.md
+  skill_wrapper: prompts/skill_wrapper.md     # 讓選擇題 Skill 適用於自由提問的包裝說明
+  output_format: prompts/output_format.md     # 兩邊共用的輸出格式規則
+  # Skill 來源：.skill / .zip / 含 SKILL.md 的資料夾 / 單一 .md 檔
+  # 想換 Skill 只要改這一行（或把內容放到 prompts/generalized_or_skill.md 並指向它）
+  skill_source: ../../skill/orqa-formulation-mcq-2.skill
+  skill_overview: prompts/skill_overview.md   # 「Skill 設計」頁面顯示的說明（不公開完整 prompt）
+
+limits:
+  max_input_chars: 8000       # 單則訊息字數上限
+  max_turns_per_branch: 20    # 每個分支最多幾輪對話
+  session_ttl_minutes: 120    # 閒置多久後清除工作階段
+  max_sessions: 200           # 記憶體中最多保留幾個工作階段
+
+data:
+  examples: data/examples.json
+  materials: data/materials.json
+
+server:
+  cors_origins:
+    - http://localhost:3000
+    - http://127.0.0.1:3000

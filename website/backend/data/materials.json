@@ -1,0 +1,23 @@
+[
+  {
+    "id": "poster",
+    "title": "研究海報",
+    "category": "Research Poster",
+    "description": "專題研究海報",
+    "file": "../assets/專題海報.pdf"
+  },
+  {
+    "id": "slides",
+    "title": "簡報",
+    "category": "Presentation Slides",
+    "description": "專題發表簡報",
+    "file": "../assets/專題簡報.pdf"
+  },
+  {
+    "id": "report",
+    "title": "專題報告",
+    "category": "Project Report",
+    "description": "完整書面報告",
+    "file": "../assets/專題報告.pdf"
+  }
+]

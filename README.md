@@ -7,6 +7,7 @@ ORQA（Operations Research Question Answering）四選一問答的實驗框架�
 - **RAG**：Voyage Embedding + 本機 ChromaDB + BM25 + Reciprocal Rank Fusion（不再依賴 RAGFlow）
 - **結果**：原始預測（Raw）與 Haiku 後處理（Post-analysis）完全分開，各自計算準確率
 - **實驗管理**：每次實驗一個獨立目錄，支援中斷續跑，絕不覆寫舊結果
+- **互動式網頁**：`website/` 為本機執行的 Baseline vs. Skill 比較網頁（FastAPI + Next.js），安裝與啟動方式見 [website/README.md](website/README.md)
 
 ---
 

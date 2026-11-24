@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  --font-mono: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #020617;
+    --foreground: #e2e8f0;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* ---------- 模型回答的排版（Markdown + KaTeX） ---------- */
+.prose-or {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.prose-or > :first-child { margin-top: 0; }
+.prose-or > :last-child { margin-bottom: 0; }
+.prose-or p { margin: 0.6em 0; }
+.prose-or h1, .prose-or h2, .prose-or h3, .prose-or h4 {
+  font-weight: 650;
+  line-height: 1.4;
+  margin: 1.1em 0 0.5em;
+}
+.prose-or h1 { font-size: 1.25rem; }
+.prose-or h2 { font-size: 1.125rem; }
+.prose-or h3 { font-size: 1rem; }
+.prose-or ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0; }
+.prose-or ol { list-style: decimal; padding-left: 1.6em; margin: 0.5em 0; }
+.prose-or li { margin: 0.2em 0; }
+.prose-or strong { font-weight: 650; }
+.prose-or a { color: #4f46e5; text-decoration: underline; }
+.prose-or blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.9em;
+  color: #475569;
+  margin: 0.6em 0;
+}
+.prose-or hr { border-color: #e2e8f0; margin: 1em 0; }
+.prose-or code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: #f1f5f9;
+  border-radius: 0.3em;
+  padding: 0.1em 0.35em;
+}
+.prose-or pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 0.6em;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  margin: 0.7em 0;
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+.prose-or pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
+.prose-or .table-wrap { overflow-x: auto; margin: 0.7em 0; }
+.prose-or table { border-collapse: collapse; font-size: 0.875rem; }
+.prose-or th, .prose-or td {
+  border: 1px solid #e2e8f0;
+  padding: 0.35em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-or th { background: #f8fafc; font-weight: 600; }
+.prose-or .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; margin: 0.7em 0; }
+.prose-or .katex { font-size: 1.05em; }
+
+@media (prefers-color-scheme: dark) {
+  .prose-or a { color: #a5b4fc; }
+  .prose-or blockquote { border-color: #475569; color: #94a3b8; }
+  .prose-or hr { border-color: #334155; }
+  .prose-or code { background: #1e293b; }
+  .prose-or pre { background: #020617; border: 1px solid #1e293b; }
+  .prose-or th, .prose-or td { border-color: #334155; }
+  .prose-or th { background: #0f172a; }
+}
+
+/* details 預設的三角形改用自訂圖示 */
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
