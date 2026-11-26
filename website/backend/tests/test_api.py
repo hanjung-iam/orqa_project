@@ -191,6 +191,36 @@ def test_materials(client):
 def test_skill_prompt_contains_skill_and_baseline_does_not():
     settings = load_settings()
     prompts = build_prompts(settings)
-    assert "ORQA Formulation MCQ" in prompts.skill
-    assert "ORQA Formulation MCQ" not in prompts.baseline
-    assert "$...$" in prompts.baseline and "$...$" in prompts.skill  # 共用輸出格式
+    mcq, clp = prompts.skill("orqa-mcq-2").system, prompts.skill("complexlp-v2").system
+    assert "ORQA Formulation MCQ" in mcq and "ORQA Formulation MCQ" not in clp
+    assert "WHOLE-UNIT / INTEGER DECISION CHECK" in clp and "WHOLE-UNIT" not in mcq
+    for text in (mcq, clp):
+        assert "$...$" in text  # 共用輸出格式
+    assert "$...$" in prompts.baseline
+    assert "OR SKILL" not in prompts.baseline and "ORQA Formulation MCQ" not in prompts.baseline
+    assert "Override the Skill's output rules" in clp  # complexlp 的包裝說明覆寫「只輸出 JSON」
+    assert prompts.skill().id == settings.prompts.default_skill
+
+
+def test_config_lists_skills(client):
+    cfg = client.get("/api/config").json()
+    ids = [s["id"] for s in cfg["skills"]]
+    assert ids == ["orqa-mcq-2", "complexlp-v2"] and cfg["default_skill"] == "orqa-mcq-2"
+    assert all(s["label"] and s["description"] for s in cfg["skills"])
+    info = client.get("/api/skill", params={"skill_id": "complexlp-v2"}).json()
+    assert info["id"] == "complexlp-v2" and "Practical Implementation" in info["overview_markdown"]
+    assert client.get("/api/skill").json()["id"] == "orqa-mcq-2"
+    assert client.get("/api/skill", params={"skill_id": "nope"}).status_code == 422
+
+
+def test_session_uses_selected_skill(client, fake):
+    default = client.post("/api/sessions").json()
+    assert default["skill_id"] == "orqa-mcq-2"
+    r = client.post("/api/sessions", json={"skill_id": "complexlp-v2"})
+    assert r.status_code == 201 and r.json()["skill_id"] == "complexlp-v2"
+    sid = r.json()["session_id"]
+    app_state = client.app.state.optiskill
+    systems = app_state.sessions.get(sid).systems
+    assert "WHOLE-UNIT" in systems["skill"] and systems["baseline"] == app_state.prompts.baseline
+    assert client.get(f"/api/sessions/{sid}").json()["skill_id"] == "complexlp-v2"
+    assert client.post("/api/sessions", json={"skill_id": "../etc"}).status_code == 422

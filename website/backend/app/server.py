@@ -29,7 +29,7 @@ from pydantic import BaseModel
 
 from app.llm import BranchError, ClaudeClient, LLMClient, TextDelta, TurnResult
 from app.prompts import PromptBundle, build_prompts
-from app.sessions import BRANCHES, Session, SessionStore
+from app.sessions import Session, SessionStore
 from app.settings import Settings, get_api_key, load_env_files, load_settings
 
 logger = logging.getLogger("optiskill")
@@ -40,6 +40,10 @@ BranchName = Literal["baseline", "skill"]
 
 class MessageIn(BaseModel):
     message: str
+
+
+class SessionIn(BaseModel):
+    skill_id: str | None = None   # 省略時使用 config 的 default_skill
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:
@@ -173,7 +177,8 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None,
             "max_input_chars": s.limits.max_input_chars,
             "max_turns_per_branch": s.limits.max_turns_per_branch,
             "session_ttl_minutes": s.limits.session_ttl_minutes,
-            "skill_name": prompts.skill_info.name,
+            "skills": [sp.public() for sp in prompts.skills.values()],
+            "default_skill": prompts.default_skill,
             "api_key_configured": state.api_key_configured,
             "notice": "對話只保存在後端記憶體中，後端重新啟動或閒置過久後會清除。",
         }
@@ -183,11 +188,16 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None,
         items = _load_json(settings.path(settings.data.examples))
         return [{"id": e["id"], "label": e["label"], "question": e["question"]} for e in items]
 
+    def _skill(skill_id: str | None):
+        if skill_id is not None and skill_id not in prompts.skills:
+            raise HTTPException(422, f"沒有這個 Skill：{skill_id}")
+        return prompts.skill(skill_id)
+
     @app.get("/api/skill")
-    def skill_info() -> dict[str, Any]:
-        info = prompts.skill_info
-        return {"name": info.name, "files": list(info.files), "sha256": info.sha256,
-                "overview_markdown": prompts.skill_overview}
+    def skill_info(skill_id: str | None = Query(None)) -> dict[str, Any]:
+        sp = _skill(skill_id)
+        return {**sp.public(), "files": list(sp.info.files), "sha256": sp.info.sha256,
+                "overview_markdown": sp.overview}
 
     # ---------- 專案資料 ----------
 
@@ -232,8 +242,9 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None,
         return session
 
     @app.post("/api/sessions", status_code=201)
-    def create_session() -> dict[str, Any]:
-        session = state.sessions.create({b: prompts.system_for(b) for b in BRANCHES})
+    def create_session(body: SessionIn | None = None) -> dict[str, Any]:
+        sp = _skill(body.skill_id if body else None)
+        session = state.sessions.create(prompts.systems_for(sp.id), skill_id=sp.id)
         return session.public()
 
     @app.get("/api/sessions/{session_id}")

@@ -25,7 +25,7 @@ website/
 │   │   ├── llm.py          # Claude 呼叫（AsyncAnthropic + streaming）
 │   │   ├── sessions.py     # 記憶體內的工作階段（兩個分支獨立）
 │   │   └── server.py       # REST API + SSE
-│   ├── prompts/            # baseline.md、skill_wrapper.md、output_format.md、skill_overview.md
+│   ├── prompts/            # baseline.md、output_format.md、各 Skill 的 wrapper 與 overview
 │   ├── data/               # examples.json（範例題目）、materials.json（專案資料清單）
 │   └── tests/              # 後端測試（使用假的 LLM，不會呼叫 API）
 └── frontend/               # Next.js 16 + React 19 + TypeScript + Tailwind CSS 4
@@ -93,13 +93,13 @@ npm run dev
 | 想做的事 | 修改位置 |
 |---|---|
 | 換模型、effort、輸出上限、逾時 | `backend/config.yaml` 的 `llm` 區塊 |
-| **換成其他 Skill** | `backend/config.yaml` 的 `prompts.skill_source`（可指向 `.skill` / `.zip` / 資料夾 / 單一 `.md`，例如 `prompts/generalized_or_skill.md`） |
-| 調整 Skill 在網頁中的使用方式（輸出段落等） | `backend/prompts/skill_wrapper.md` |
+| **新增 / 替換可選的 Skill** | `backend/config.yaml` 的 `prompts.skills`（每筆有 `id`、`label`、`description`、`source`、`wrapper`、`overview`；`source` 可指向 `.skill` / `.zip` / 資料夾 / 單一 `.md`），預設選項為 `prompts.default_skill` |
+| 調整 Skill 在網頁中的使用方式（輸出段落等） | 該 Skill 的 `wrapper`：`backend/prompts/skill_wrapper.md`（Concept Identification）、`backend/prompts/skill_wrapper_complexlp.md`（Practical Implementation） |
 | 調整 Baseline 提示詞 | `backend/prompts/baseline.md` |
 | 兩邊共用的格式規則（語言、Markdown、LaTeX） | `backend/prompts/output_format.md` |
 | 範例題目 | `backend/data/examples.json` |
 | 專案資料（海報、簡報、報告） | 把檔案放進 `assets/`，在 `backend/data/materials.json` 設定路徑 |
-| 「Skill 設計」頁面內容 | `backend/prompts/skill_overview.md` |
+| 「Skill 設計」頁面內容 | 該 Skill 的 `overview`：`backend/prompts/skill_overview.md`、`backend/prompts/skill_overview_complexlp.md` |
 
 修改後端設定或 prompt 後需要重新啟動後端（或等 `--reload` 自動重啟）。
 
@@ -132,12 +132,12 @@ npm run dev
 | Method | Endpoint | 說明 |
 |---|---|---|
 | GET | `/api/health` | 後端狀態 |
-| GET | `/api/config` | 公開設定（模型、輸入上限等） |
+| GET | `/api/config` | 公開設定（模型、輸入上限、可選的 Skill 清單等） |
 | GET | `/api/examples` | 範例題目 |
-| GET | `/api/skill` | Skill 名稱、檔案與說明 |
+| GET | `/api/skill?skill_id=` | 指定 Skill 的名稱、檔案與說明（省略時為預設 Skill） |
 | GET | `/api/materials` | 專案資料清單 |
 | GET | `/api/materials/{id}/file` | 開啟檔案（`?download=1` 下載） |
-| POST | `/api/sessions` | 建立比較工作階段 |
+| POST | `/api/sessions` | 建立比較工作階段（body 可帶 `{"skill_id": ...}` 指定 OptiSkill 端的 Skill，整個工作階段固定使用） |
 | GET | `/api/sessions/{id}` | 取得工作階段狀態 |
 | DELETE | `/api/sessions/{id}` | 刪除工作階段 |
 | POST | `/api/sessions/{id}/branches/{baseline\|skill}/messages` | 送出訊息（SSE 串流） |

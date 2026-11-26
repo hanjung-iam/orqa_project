@@ -11,13 +11,13 @@ const META: Record<BranchName, { title: string; subtitle: string; accent: string
   baseline: {
     title: "Baseline",
     subtitle: "一般提示詞，未載入 OR Skill",
-    accent: "border-t-slate-400",
+    accent: "border-t-neutral-400",
     followLabel: "Baseline",
   },
   skill: {
     title: "OptiSkill",
     subtitle: "載入 OR Skill 的逐步分析",
-    accent: "border-t-indigo-500",
+    accent: "border-t-brand-500",
     followLabel: "OptiSkill",
   },
 };
@@ -55,12 +55,12 @@ function SectionedAnswer({ markdown }: { markdown: string }) {
         s.heading === null ? (
           <Markdown key={i}>{s.body}</Markdown>
         ) : (
-          <details key={i} open className="group rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-            <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+          <details key={i} open className="group rounded-lg border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+            <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-sm font-semibold text-brand-700 dark:text-brand-300">
               <ChevronRight className="size-4 shrink-0 transition-transform group-open:rotate-90" />
               <span>{s.heading}</span>
             </summary>
-            <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+            <div className="border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
               <Markdown>{s.body}</Markdown>
             </div>
           </details>
@@ -77,13 +77,13 @@ function Answer({ branch, markdown }: { branch: BranchName; markdown: string }) 
 function Thinking({ text, live }: { text: string; live?: boolean }) {
   if (!text.trim()) return null;
   return (
-    <details className="group mb-3 rounded-lg bg-slate-50 text-sm dark:bg-slate-800/60">
-      <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-slate-500 dark:text-slate-400">
+    <details className="group mb-3 rounded-lg bg-neutral-50 text-sm dark:bg-neutral-800/60">
+      <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 text-neutral-500 dark:text-neutral-400">
         <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
         <Brain className="size-4" />
         {live ? "思考中…（點擊查看思考摘要）" : "模型思考摘要"}
       </summary>
-      <div className="whitespace-pre-wrap px-4 pb-3 text-slate-600 dark:text-slate-300">{text}</div>
+      <div className="whitespace-pre-wrap px-4 pb-3 text-neutral-600 dark:text-neutral-300">{text}</div>
     </details>
   );
 }
@@ -91,7 +91,7 @@ function Thinking({ text, live }: { text: string; live?: boolean }) {
 function Metrics({ turn }: { turn: AssistantTurn }) {
   const totalInput = turn.input_tokens + turn.cache_read_input_tokens + turn.cache_creation_input_tokens;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 pt-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-neutral-100 pt-2 text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
       <span className="inline-flex items-center gap-1">
         <Timer className="size-3.5" />
         {turn.response_time.toFixed(1)} 秒
@@ -112,7 +112,7 @@ function UserBubble({ text, muted }: { text: string; muted?: boolean }) {
     <div className="my-3 flex justify-end">
       <div
         className={`max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm px-3 py-2 text-sm ${
-          muted ? "bg-slate-100 text-slate-500 dark:bg-slate-800" : "bg-indigo-600 text-white"
+          muted ? "bg-neutral-100 text-neutral-500 dark:bg-neutral-800" : "bg-brand-50 text-neutral-900 ring-1 ring-brand-200 dark:bg-brand-950 dark:text-neutral-100 dark:ring-brand-900"
         }`}
       >
         {text}
@@ -143,9 +143,9 @@ function FollowUp({ branch, disabled, onSend }: { branch: BranchName; disabled: 
     setText("");
   };
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-2 focus-within:border-indigo-400 dark:border-slate-700 dark:bg-slate-900">
-      <div className="px-1 pb-1 text-xs font-medium text-slate-500">
-        追問 → 只傳給 <span className="text-indigo-600 dark:text-indigo-300">{META[branch].followLabel}</span>
+    <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-2 focus-within:border-brand-400 dark:border-neutral-700 dark:bg-neutral-900">
+      <div className="px-1 pb-1 text-xs font-medium text-neutral-500">
+        追問 → 只傳給 <span className="text-brand-700 dark:text-brand-300">{META[branch].followLabel}</span>
       </div>
       <div className="flex items-end gap-2">
         <textarea
@@ -160,12 +160,12 @@ function FollowUp({ branch, disabled, onSend }: { branch: BranchName; disabled: 
           rows={2}
           disabled={disabled}
           placeholder={disabled ? "請等待回答完成" : "補充資訊或提出追問（Enter 送出，Shift+Enter 換行）"}
-          className="min-h-[2.5rem] flex-1 resize-y bg-transparent px-1 text-sm outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
+          className="min-h-[2.5rem] flex-1 resize-y bg-transparent px-1 text-sm outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed"
         />
         <button
           onClick={send}
           disabled={disabled || !text.trim()}
-          className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+          className="inline-flex items-center gap-1 rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:disabled:bg-neutral-700"
         >
           <CornerDownLeft className="size-4" />
           送出
@@ -179,12 +179,15 @@ export function ResponsePanel({
   branch,
   view,
   model,
+  skillLabel,
   onFollowUp,
   onRetry,
 }: {
   branch: BranchName;
   view: BranchView;
   model: string | undefined;
+  /** OptiSkill 端這次使用的 Skill 名稱 */
+  skillLabel?: string;
   onFollowUp: (text: string) => void;
   onRetry: () => void;
 }) {
@@ -195,17 +198,17 @@ export function ResponsePanel({
   const hasTurns = view.turns.length > 0;
 
   return (
-    <section className={`flex min-w-0 flex-col rounded-2xl border border-t-4 border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/70 ${meta.accent}`}>
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
+    <section className={`flex min-w-0 flex-col rounded-2xl border border-t-4 border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900/70 ${meta.accent}`}>
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 px-5 py-3 dark:border-neutral-800">
         <div>
           <h2 className="text-lg font-semibold">{meta.title}</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {meta.subtitle}
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {branch === "skill" && skillLabel ? `載入 ${skillLabel} Skill 的逐步分析` : meta.subtitle}
             {model && <> · {model}</>}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {loading && <span className="text-xs tabular-nums text-slate-500">{elapsed.toFixed(0)} 秒</span>}
+          {loading && <span className="text-xs tabular-nums text-neutral-500">{elapsed.toFixed(0)} 秒</span>}
           <StatusBadge status={view.status} />
         </div>
       </header>
@@ -234,9 +237,9 @@ export function ResponsePanel({
               <Answer branch={branch} markdown={view.streamingText} />
             ) : (
               <div className="space-y-2 py-2" aria-label="等待回應">
-                <div className="h-3 w-3/4 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="h-3 w-5/6 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="h-3 w-2/3 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-3 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-3 w-5/6 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
               </div>
             )}
           </div>
@@ -264,7 +267,7 @@ export function ResponsePanel({
         )}
 
         {view.status === "idle" && !hasTurns && (
-          <p className="py-8 text-center text-sm text-slate-400">送出問題後，回答會顯示在這裡。</p>
+          <p className="py-8 text-center text-sm text-neutral-400">送出問題後，回答會顯示在這裡。</p>
         )}
 
         {hasTurns && <FollowUp branch={branch} disabled={loading} onSend={onFollowUp} />}

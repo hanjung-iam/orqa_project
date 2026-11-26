@@ -1,8 +1,9 @@
 "use client";
 
 import { AlertTriangle, Info, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError, api, type Example, type PublicConfig } from "@/lib/api";
+import { useHomeReset } from "@/lib/homeReset";
 import { BRANCHES, useComparison } from "@/lib/useComparison";
 import { QuestionInput } from "./QuestionInput";
 import { ResponsePanel } from "./ResponsePanel";
@@ -11,7 +12,21 @@ export function ComparisonView() {
   const [config, setConfig] = useState<PublicConfig | null>(null);
   const [examples, setExamples] = useState<Example[]>([]);
   const [backendError, setBackendError] = useState<string | null>(null);
+  /** 下拉選單目前選的 Skill（null = 尚未載入設定，使用後端預設） */
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const cmp = useComparison();
+  const skills = config?.skills ?? [];
+  const skillId = selectedSkill ?? config?.default_skill ?? null;
+  const activeSkill = skills.find((s) => s.id === cmp.skillId);
+  const { anyLoading, reset } = cmp;
+
+  // 點 logo / Home：回到初始輸入畫面（回答進行中時先確認）
+  const goHome = useCallback(() => {
+    if (anyLoading && !window.confirm("仍有回答在進行中，確定要離開目前的比較嗎？")) return;
+    reset();
+    window.scrollTo({ top: 0 });
+  }, [anyLoading, reset]);
+  useHomeReset(goHome);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,8 +70,10 @@ export function ComparisonView() {
 
       {cmp.question === null ? (
         <section className="mx-auto flex max-w-3xl flex-col items-center pt-14 text-center sm:pt-20">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Explore OR Reasoning with AI</h1>
-          <p className="mt-3 max-w-xl text-slate-600 dark:text-slate-400">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Explore <span className="text-brand-600 dark:text-brand-400">OR Reasoning</span> with AI
+          </h1>
+          <p className="mt-3 max-w-xl text-neutral-600 dark:text-neutral-400">
             輸入一個作業研究問題，同時比較一般提示詞（Baseline）與載入 OR Skill（OptiSkill）的 Claude 回答。
           </p>
           <div className="mt-8 w-full">
@@ -65,29 +82,42 @@ export function ComparisonView() {
               maxChars={config?.max_input_chars ?? 8000}
               busy={cmp.starting}
               disabled={backendDown}
-              onSubmit={cmp.start}
+              skills={skills}
+              skillId={skillId}
+              onSkillChange={setSelectedSkill}
+              onSubmit={(text) => cmp.start(text, skillId ?? undefined)}
             />
           </div>
           {cmp.startError && <p className="mt-3 text-sm text-red-600">{cmp.startError}</p>}
           {config && (
-            <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-slate-400">
+            <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-neutral-400">
               <Info className="size-3.5" />
               {config.notice}
             </p>
           )}
         </section>
       ) : (
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <section className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/70">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">問題（同時傳給兩邊）</p>
+              <p className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                問題（同時傳給兩邊）
+                {activeSkill && (
+                  <span
+                    title={activeSkill.description}
+                    className="rounded-full bg-brand-50 px-2 py-0.5 normal-case tracking-normal text-brand-700 dark:bg-brand-950 dark:text-brand-300"
+                  >
+                    OptiSkill：{activeSkill.label}
+                  </span>
+                )}
+              </p>
               <p className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap text-[15px] leading-relaxed">{cmp.question}</p>
             </div>
             <button
               onClick={() => {
                 if (!cmp.anyLoading || window.confirm("仍有回答在進行中，確定要開始新的比較嗎？")) cmp.reset();
               }}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium hover:border-indigo-400 hover:text-indigo-700 dark:border-slate-600"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:border-brand-400 hover:text-brand-700 dark:border-neutral-600"
             >
               <Plus className="size-4" />
               新的比較
@@ -104,6 +134,7 @@ export function ComparisonView() {
               branch={branch}
               view={cmp.branches[branch]}
               model={config?.model}
+              skillLabel={activeSkill?.label}
               onFollowUp={(text) => cmp.followUp(branch, text)}
               onRetry={() => cmp.retry(branch)}
             />

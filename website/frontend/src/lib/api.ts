@@ -40,7 +40,8 @@ export interface PublicConfig {
   max_input_chars: number;
   max_turns_per_branch: number;
   session_ttl_minutes: number;
-  skill_name: string;
+  skills: SkillOption[];
+  default_skill: string;
   api_key_configured: boolean;
   notice: string;
 }
@@ -62,8 +63,15 @@ export interface Material {
   url: string | null;
 }
 
-export interface SkillInfo {
+/** OptiSkill 端可選擇的 Skill（由後端 config.yaml 的 prompts.skills 定義） */
+export interface SkillOption {
+  id: string;
+  label: string;
+  description: string;
   name: string;
+}
+
+export interface SkillInfo extends SkillOption {
   files: string[];
   sha256: string;
   overview_markdown: string;
@@ -107,8 +115,14 @@ export const api = {
   config: () => request<PublicConfig>("/api/config"),
   examples: () => request<Example[]>("/api/examples"),
   materials: () => request<Material[]>("/api/materials"),
-  skill: () => request<SkillInfo>("/api/skill"),
-  createSession: () => request<{ session_id: string }>("/api/sessions", { method: "POST" }),
+  skill: (skillId?: string) =>
+    request<SkillInfo>("/api/skill" + (skillId ? `?skill_id=${encodeURIComponent(skillId)}` : "")),
+  createSession: (skillId?: string) =>
+    request<{ session_id: string; skill_id: string }>("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ skill_id: skillId ?? null }),
+    }),
   deleteSession: (id: string) => request<void>(`/api/sessions/${id}`, { method: "DELETE" }),
 };
 

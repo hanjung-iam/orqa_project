@@ -1,8 +1,37 @@
 @import "tailwindcss";
 
+/*
+ * 固定使用淺色（白底）介面，不跟隨作業系統 / 瀏覽器的深色模式。
+ * Tailwind 的 dark: 預設依 prefers-color-scheme 啟用；改成只在 .dark class 下才生效，
+ * 而網頁從不加上 .dark，所以 dark: 樣式不會套用（保留在程式中，日後要支援深色模式時可再開啟）。
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light; /* 捲軸、下拉選單等原生元件也維持淺色 */
+}
+
+/*
+ * 品牌色：取自專題簡報的橘白配色。
+ *   brand-500 #e8a000 = 簡報標題與編號徽章的金橘色（裝飾、圖示、邊框、大標題）
+ *   brand-700 #b45309 = 白字按鈕底色（與白字對比 5.0，符合可讀性）
+ *   coral-500 #e07850 = 簡報吉祥物的珊瑚橘（少量點綴）
+ */
+@theme {
+  --color-brand-50: #fff8ed;
+  --color-brand-100: #ffefd3;
+  --color-brand-200: #fedca6;
+  --color-brand-300: #fbc46c;
+  --color-brand-400: #f3ab35;
+  --color-brand-500: #e8a000;
+  --color-brand-600: #d97706;
+  --color-brand-700: #b45309;
+  --color-brand-800: #92400e;
+  --color-brand-900: #78350f;
+  --color-brand-950: #451a03;
+  --color-coral-500: #e07850;
 }
 
 @theme inline {
@@ -10,13 +39,6 @@
   --color-foreground: var(--foreground);
   --font-sans: "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
   --font-mono: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #e2e8f0;
-  }
 }
 
 body {
@@ -46,24 +68,24 @@ body {
 .prose-or ol { list-style: decimal; padding-left: 1.6em; margin: 0.5em 0; }
 .prose-or li { margin: 0.2em 0; }
 .prose-or strong { font-weight: 650; }
-.prose-or a { color: #4f46e5; text-decoration: underline; }
+.prose-or a { color: #b45309; text-decoration: underline; }
 .prose-or blockquote {
-  border-left: 3px solid #cbd5e1;
+  border-left: 3px solid #fbc46c;
   padding-left: 0.9em;
-  color: #475569;
+  color: #525252;
   margin: 0.6em 0;
 }
-.prose-or hr { border-color: #e2e8f0; margin: 1em 0; }
+.prose-or hr { border-color: #e5e5e5; margin: 1em 0; }
 .prose-or code {
   font-family: var(--font-mono);
   font-size: 0.85em;
-  background: #f1f5f9;
+  background: #f5f5f5;
   border-radius: 0.3em;
   padding: 0.1em 0.35em;
 }
 .prose-or pre {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #171717;
+  color: #e5e5e5;
   border-radius: 0.6em;
   padding: 0.9em 1em;
   overflow-x: auto;
@@ -75,24 +97,15 @@ body {
 .prose-or .table-wrap { overflow-x: auto; margin: 0.7em 0; }
 .prose-or table { border-collapse: collapse; font-size: 0.875rem; }
 .prose-or th, .prose-or td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e5e5;
   padding: 0.35em 0.7em;
   text-align: left;
   vertical-align: top;
 }
-.prose-or th { background: #f8fafc; font-weight: 600; }
+.prose-or th { background: #fff8ed; font-weight: 600; }
 .prose-or .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; margin: 0.7em 0; }
 .prose-or .katex { font-size: 1.05em; }
 
-@media (prefers-color-scheme: dark) {
-  .prose-or a { color: #a5b4fc; }
-  .prose-or blockquote { border-color: #475569; color: #94a3b8; }
-  .prose-or hr { border-color: #334155; }
-  .prose-or code { background: #1e293b; }
-  .prose-or pre { background: #020617; border: 1px solid #1e293b; }
-  .prose-or th, .prose-or td { border-color: #334155; }
-  .prose-or th { background: #0f172a; }
-}
 
 /* details 預設的三角形改用自訂圖示 */
 summary::-webkit-details-marker { display: none; }

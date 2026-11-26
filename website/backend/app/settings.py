@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 WEBSITE_DIR = BACKEND_DIR.parent
@@ -40,12 +40,29 @@ class LLMSettings(_Strict):
     max_retries: int = Field(2, ge=0, le=10)
 
 
+class SkillSettings(_Strict):
+    id: str = Field(..., pattern=r"^[a-z0-9][a-z0-9_-]{0,63}$")
+    label: str                    # 下拉選單顯示的名稱
+    description: str = ""         # 簡短說明（適合哪類題目）
+    source: str                   # .skill / .zip / 含 SKILL.md 的資料夾 / 單一 .md 檔
+    wrapper: str                  # 讓這份 Skill 適用於本網頁的包裝說明
+    overview: str = ""            # 「Skill 設計」頁面顯示的說明（不公開完整 prompt）
+
+
 class PromptSettings(_Strict):
     baseline: str
-    skill_wrapper: str
     output_format: str
-    skill_source: str
-    skill_overview: str
+    default_skill: str
+    skills: list[SkillSettings] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def _check_skills(self) -> "PromptSettings":
+        ids = [s.id for s in self.skills]
+        if len(ids) != len(set(ids)):
+            raise ValueError("prompts.skills 的 id 不可重複")
+        if self.default_skill not in ids:
+            raise ValueError(f"prompts.default_skill（{self.default_skill}）不在 prompts.skills 中")
+        return self
 
 
 class LimitSettings(_Strict):

@@ -1,6 +1,6 @@
 ## Skill 概要
 
-本網頁的 Skill 端使用專題中開發的 **ORQA Formulation Skill**（`orqa-formulation-mcq-2`）。它原本是為 ORQA（Operations Research Question Answering）四選一題目設計的「推理手冊」，教模型先從商業情境中**重建最佳化模型**，再回答關於模型的問題。
+**Concept Identification** 使用專題中開發的 **ORQA Formulation Skill**（原始 Skill：`orqa-formulation-mcq-2`）。它原本是為 ORQA（Operations Research Question Answering）四選一題目設計的「推理手冊」，教模型先從商業情境中**重建最佳化模型**，再回答關於模型的問題。
 
 Baseline 端使用相同的模型與輸出格式規則，但沒有載入這份 Skill，因此兩邊的差異來自 Skill 本身。
 
@@ -40,4 +40,6 @@ Baseline 端使用相同的模型與輸出格式規則，但沒有載入這份 S
 6. 假設與限制
 7. 結論
 
-Skill 的原始內容沒有被修改；若要替換成其他 Skill，只需修改後端 `config.yaml` 中的 `prompts.skill_source`。
+若貼上的題目附有選項（例如 ORQA 原題），OptiSkill 會額外套用 Skill 的題型判斷與 meta-option 規則，逐一檢查各選項，並在結論中說明選擇的選項與理由。
+
+Skill 的原始內容沒有被修改；可在後端 `config.yaml` 的 `prompts.skills` 中新增或替換 Skill。

@@ -19,12 +19,26 @@ llm:
 
 prompts:
   baseline: prompts/baseline.md
-  skill_wrapper: prompts/skill_wrapper.md     # 讓選擇題 Skill 適用於自由提問的包裝說明
   output_format: prompts/output_format.md     # 兩邊共用的輸出格式規則
-  # Skill 來源：.skill / .zip / 含 SKILL.md 的資料夾 / 單一 .md 檔
-  # 想換 Skill 只要改這一行（或把內容放到 prompts/generalized_or_skill.md 並指向它）
-  skill_source: ../../skill/orqa-formulation-mcq-2.skill
-  skill_overview: prompts/skill_overview.md   # 「Skill 設計」頁面顯示的說明（不公開完整 prompt）
+  # 使用者可在 Send 旁的下拉選單選擇 OptiSkill 端要載入哪一份 Skill。
+  # 新增 Skill：在下面加一筆即可（id 只能用小寫英數、- 與 _）。
+  #   source  ：.skill / .zip / 含 SKILL.md 的資料夾 / 單一 .md 檔
+  #   wrapper ：讓這份 Skill 適用於本網頁的包裝說明（例如覆寫原 Skill「只輸出答案」的規則）
+  #   overview：「Skill 設計」頁面顯示的說明（不公開完整 prompt，可省略）
+  default_skill: orqa-mcq-2
+  skills:
+    - id: orqa-mcq-2
+      label: Concept Identification
+      description: 模型結構辨識（ORQA 選擇題：目標、限制式、參數、模型類型）
+      source: ../../skill/orqa-formulation-mcq-2.skill
+      wrapper: prompts/skill_wrapper.md
+      overview: prompts/skill_overview.md
+    - id: complexlp-v2
+      label: Practical Implementation
+      description: 數值求解（LP / IP，判斷整數變數並驗證最佳解）
+      source: ../../skill/complexlp-v2.skill
+      wrapper: prompts/skill_wrapper_complexlp.md
+      overview: prompts/skill_overview_complexlp.md
 
 limits:
   max_input_chars: 8000       # 單則訊息字數上限

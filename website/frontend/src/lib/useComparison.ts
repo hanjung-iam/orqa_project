@@ -28,6 +28,8 @@ export const BRANCHES: BranchName[] = ["baseline", "skill"];
 export function useComparison() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [question, setQuestion] = useState<string | null>(null);
+  /** 這次比較 OptiSkill 端使用的 Skill（建立 Session 時決定，追問沿用） */
+  const [skillId, setSkillId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [branches, setBranches] = useState<Record<BranchName, BranchView>>({
@@ -94,17 +96,18 @@ export function useComparison() {
     [update],
   );
 
-  /** 開始新的比較：建立 Session，兩個分支同時送出相同的問題 */
+  /** 開始新的比較：建立 Session（指定 OptiSkill 端的 Skill），兩個分支同時送出相同的問題 */
   const start = useCallback(
-    async (text: string) => {
+    async (text: string, skill?: string) => {
       const message = text.trim();
       if (!message || starting) return;
       setStarting(true);
       setStartError(null);
       try {
-        const { session_id } = await api.createSession();
+        const { session_id, skill_id } = await api.createSession(skill);
         sessionRef.current = session_id;
         setSessionId(session_id);
+        setSkillId(skill_id);
         setQuestion(message);
         setBranches({ baseline: emptyBranch(), skill: emptyBranch() });
         // 兩個請求同時發出、各自更新，不互相等待
@@ -146,6 +149,7 @@ export function useComparison() {
     sessionRef.current = null;
     setSessionId(null);
     setQuestion(null);
+    setSkillId(null);
     setStartError(null);
     setBranches({ baseline: emptyBranch(), skill: emptyBranch() });
     if (old) api.deleteSession(old).catch(() => undefined);
@@ -160,5 +164,5 @@ export function useComparison() {
 
   const anyLoading = BRANCHES.some((b) => branches[b].status === "loading");
 
-  return { sessionId, question, branches, starting, startError, anyLoading, start, followUp, retry, reset };
+  return { sessionId, question, skillId, branches, starting, startError, anyLoading, start, followUp, retry, reset };
 }

@@ -51,6 +51,7 @@ class BranchState:
 class Session:
     session_id: str
     systems: dict[str, str]          # 建立時固定的 system prompt 快照（同一 Session 內不會改變）
+    skill_id: str = ""               # OptiSkill 端使用的 Skill（建立時選定，追問沿用）
     created_at: str = field(default_factory=_now_iso)
     last_active: float = field(default_factory=time.monotonic)
     branches: dict[str, BranchState] = field(
@@ -65,6 +66,7 @@ class Session:
             "session_id": self.session_id,
             "created_at": self.created_at,
             "status": "active",
+            "skill_id": self.skill_id,
             "branches": {name: b.public() for name, b in self.branches.items()},
         }
 
@@ -88,7 +90,7 @@ class SessionStore:
             del self._sessions[sid]
         return len(expired)
 
-    def create(self, systems: dict[str, str]) -> Session:
+    def create(self, systems: dict[str, str], skill_id: str = "") -> Session:
         self.cleanup()
         while len(self._sessions) >= self.max_sessions:
             idle = [s for s in self._sessions.values() if not any(b.busy for b in s.branches.values())]
@@ -96,7 +98,7 @@ class SessionStore:
                 break
             oldest = min(idle, key=lambda s: s.last_active)
             del self._sessions[oldest.session_id]
-        session = Session(session_id=secrets.token_hex(16), systems=dict(systems))
+        session = Session(session_id=secrets.token_hex(16), systems=dict(systems), skill_id=skill_id)
         self._sessions[session.session_id] = session
         return session
 
