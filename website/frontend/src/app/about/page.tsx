@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "About — OptiSkill" };
 const STEPS = [
   { title: "輸入問題", body: "在首頁輸入任何作業研究問題，可以是中文或英文，包含情境、參數、目標與限制。不需要遵循 ORQA 資料集的格式，也不需要提供選項。" },
   { title: "或選擇範例", body: "點選「Example 1–5」會把範例題目填入輸入框，但不會自動送出，可以先修改再送出。" },
-  { title: "選擇 Skill", body: "Send 旁的下拉選單可選擇 OptiSkill 端要載入哪一份 Skill：Concept Identification（概念辨識）擅長辨認模型結構（ORQA 選擇題），Practical Implementation（實際求解）擅長把 LP / IP 問題解出最佳值並驗證。選定後整個比較（含追問）都使用同一份 Skill；Baseline 不受影響。" },
+  { title: "選擇 Skill", body: "Send 旁的下拉選單可選擇 OptiSkill 端要載入哪一份 Skill：Concept Identification（概念辨識）擅長辨認模型結構（ORQA 選擇題），Practical Implementation（實際求解）擅長把 LP / IP 問題解出最佳值並驗證，General Optimization（通用求解）涵蓋最廣的 OR 題型，並加上錯誤防護與答案狀態標示。選定後整個比較（含追問）都使用同一份 Skill；Baseline 不受影響。" },
   { title: "送出並比較", body: "按 Enter 或 Send 後，同一個問題會同時送給兩邊：左邊 Baseline（一般提示詞），右邊 OptiSkill（載入 OR Skill）。兩邊各自獨立執行，先完成的先顯示。" },
   { title: "閱讀分析", body: "OptiSkill 的回答依階段分段（問題理解、模型元素、目標與限制式、模型類型、求解與驗證、假設、結論），每段可以展開或收合。數學式以 LaTeX 呈現。" },
   { title: "分別追問", body: "每一欄下方有自己的追問框，訊息只會傳給那一邊。若某一邊要求補充資訊，就在那一欄回覆；兩邊的對話紀錄完全獨立，不會看到對方的回答。" },

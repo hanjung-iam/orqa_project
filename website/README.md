@@ -93,13 +93,14 @@ npm run dev
 | 想做的事 | 修改位置 |
 |---|---|
 | 換模型、effort、輸出上限、逾時 | `backend/config.yaml` 的 `llm` 區塊 |
+| **Skill 在網頁上顯示的名稱** | `backend/config.yaml` 中該 Skill 的 `label`（下拉選單、問題卡片、欄位副標題、Skill 設計頁分頁都會跟著改）；說明文字在 `description` |
 | **新增 / 替換可選的 Skill** | `backend/config.yaml` 的 `prompts.skills`（每筆有 `id`、`label`、`description`、`source`、`wrapper`、`overview`；`source` 可指向 `.skill` / `.zip` / 資料夾 / 單一 `.md`），預設選項為 `prompts.default_skill` |
-| 調整 Skill 在網頁中的使用方式（輸出段落等） | 該 Skill 的 `wrapper`：`backend/prompts/skill_wrapper.md`（Concept Identification）、`backend/prompts/skill_wrapper_complexlp.md`（Practical Implementation） |
+| 調整 Skill 在網頁中的使用方式（輸出段落等） | 該 Skill 的 `wrapper`：`backend/prompts/skill_wrapper.md`（Concept Identification）、`backend/prompts/skill_wrapper_complexlp.md`（Practical Implementation）、`backend/prompts/skill_wrapper_general.md`（General Optimization） |
 | 調整 Baseline 提示詞 | `backend/prompts/baseline.md` |
 | 兩邊共用的格式規則（語言、Markdown、LaTeX） | `backend/prompts/output_format.md` |
 | 範例題目 | `backend/data/examples.json` |
 | 專案資料（海報、簡報、報告） | 把檔案放進 `assets/`，在 `backend/data/materials.json` 設定路徑 |
-| 「Skill 設計」頁面內容 | 該 Skill 的 `overview`：`backend/prompts/skill_overview.md`、`backend/prompts/skill_overview_complexlp.md` |
+| 「Skill 設計」頁面內容 | 該 Skill 的 `overview`：`backend/prompts/skill_overview.md`、`backend/prompts/skill_overview_complexlp.md`、`backend/prompts/skill_overview_general.md` |
 
 修改後端設定或 prompt 後需要重新啟動後端（或等 `--reload` 自動重啟）。
 

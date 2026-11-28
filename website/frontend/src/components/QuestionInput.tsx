@@ -35,7 +35,10 @@ export function QuestionInput({
   return (
     <div className="w-full">
       <div className="rounded-2xl border border-neutral-300 bg-white p-3 shadow-sm focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:ring-brand-950">
+        {/* 部分瀏覽器擴充功能（表單填寫 / 密碼管理等）會在 React 接手前替輸入框加上屬性
+            （例如 data-sharkid），造成 hydration 警告；只忽略這個元素本身的屬性差異。 */}
         <textarea
+          suppressHydrationWarning
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

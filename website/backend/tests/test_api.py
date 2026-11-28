@@ -199,13 +199,15 @@ def test_skill_prompt_contains_skill_and_baseline_does_not():
     assert "$...$" in prompts.baseline
     assert "OR SKILL" not in prompts.baseline and "ORQA Formulation MCQ" not in prompts.baseline
     assert "Override the Skill's output rules" in clp  # complexlp 的包裝說明覆寫「只輸出 JSON」
+    general = prompts.skill("or-general-solver").system
+    assert "General OR Solver" in general and "A7. Output format" in general and "$...$" in general
     assert prompts.skill().id == settings.prompts.default_skill
 
 
 def test_config_lists_skills(client):
     cfg = client.get("/api/config").json()
     ids = [s["id"] for s in cfg["skills"]]
-    assert ids == ["orqa-mcq-2", "complexlp-v2"] and cfg["default_skill"] == "orqa-mcq-2"
+    assert ids == ["orqa-mcq-2", "complexlp-v2", "or-general-solver"] and cfg["default_skill"] == "orqa-mcq-2"
     assert all(s["label"] and s["description"] for s in cfg["skills"])
     info = client.get("/api/skill", params={"skill_id": "complexlp-v2"}).json()
     assert info["id"] == "complexlp-v2" and "Practical Implementation" in info["overview_markdown"]

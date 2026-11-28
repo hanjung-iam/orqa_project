@@ -39,6 +39,12 @@ prompts:
       source: ../../skill/complexlp-v2.skill
       wrapper: prompts/skill_wrapper_complexlp.md
       overview: prompts/skill_overview_complexlp.md
+    - id: or-general-solver
+      label: General Optimization
+      description: 通用 OR 解題（建模、錯誤防護、求解與驗證；涵蓋 LP / IP、網路、排程、存貨、等候線等）
+      source: ../../skill/or-general-solver.skill
+      wrapper: prompts/skill_wrapper_general.md
+      overview: prompts/skill_overview_general.md
 
 limits:
   max_input_chars: 8000       # 單則訊息字數上限
